@@ -1,0 +1,41 @@
+# See https://help.github.com/articles/ignoring-files/ for more about ignoring files.
+
+# dependencies
+/node_modules
+/.pnp
+.pnp.js
+
+# testing
+/coverage
+
+# production
+/build
+
+# misc
+.DS_Store
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+
+# Ignore all .h5 model files
+*.h5
+*.safetensors
+
+# Ignore specific model files
+Brain_Tumor_Classification_best
+chest_disease_classification_model
+doctors.db
+eye_classification_model
+h5_organ_classifier.h5
+kidney_stone.pt
+kidney_disease_classification_model.h5
+liver_disease_detection.pt
+liver_tumor_segmentation_model.pt
+organ_classification_model.h5
+organ_classifier.h5

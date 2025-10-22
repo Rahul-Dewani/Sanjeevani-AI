@@ -1,0 +1,319 @@
+:root {
+    --light-blue: #e8f3f3;
+    --white: #fff;
+    --light-green: #749ba1;
+    --gray: #d1d1d1;
+    --dark-bg: #2b2b2b;
+    --dark-hover: #3a3a3a;
+    --dark-text: #d6d6d6;
+    --dark-icon: #55b4b0;
+    --dark-highlight: #4a7a78;
+  }
+  
+  body.dark-mode {
+    background-color: var(--dark-bg);
+    color: var(--dark-text);
+  }
+  
+  .sidebar {
+    width: 300px;
+    height: 100vh;
+    background-color: var(--light-blue);
+    border-right: 1px solid var(--gray);
+    display: flex;
+    flex-direction: column;
+    padding: 16px;
+    box-sizing: border-box;
+    transition: background-color 0.3s ease, width 0.3s ease;
+  }
+  
+  .sidebar.dark {
+    background-color: var(--dark-bg);
+    border-right: 1px solid var(--dark-hover);
+  }
+  
+  .sidebar-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 0px;
+    margin-top: 0%;
+  }
+  
+  .logo {
+    display: flex;
+    align-items: center;
+    animation: fadeIn 1s ease-in-out;
+    width: 100%;
+    height: auto;
+  }
+  
+  .logo img {
+    height: 60px;
+    margin-right: 10px;
+  }
+  
+  .logo h1 {
+    font-size: 22px;
+    color: var(--light-green);
+    font-weight: bold;
+  }
+  
+  .sidebar.dark .logo h1 {
+    color: var(--dark-icon);
+  }
+  
+  .menu {
+    flex: 1;
+  }
+  
+  .menu-section {
+    margin-bottom: 20px;
+  }
+  
+  .menu-item {
+    display: flex;
+    align-items: center;
+    padding: 8px 12px;
+    border-radius: 6px;
+    color: var(--light-green);
+    text-decoration: none;
+    font-size: 14px;
+    font-weight: 500;
+    transition: background-color 0.3s ease, transform 0.3s ease, color 0.3s ease;
+  }
+  
+  .menu-item.active {
+    background-color: var(--gray);
+    font-weight: bold;
+    font-size: 16px;
+  }
+  
+  .sidebar.dark .menu-item {
+    color: var(--dark-text);
+  }
+  
+  .sidebar.dark .menu-item.active {
+    background-color: var(--dark-highlight);
+    color: var(--dark-icon);
+    font-weight: bold;
+    font-size: 16px;
+  }
+  
+  .menu-item:hover {
+    background-color: var(--white);
+    color: var(--light-blue);
+    transform: translateX(8px);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+  }
+  
+  .sidebar.dark .menu-item:hover {
+    background-color: var(--dark-hover);
+    color: var(--dark-icon);
+    transform: translateX(8px);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+  }
+  
+  .menu-item .icon {
+    font-size: 18px;
+    margin-right: 10px;
+  }
+  
+  .sidebar.dark .menu-item .icon {
+    color: var(--dark-icon);
+  }
+  
+  .footer {
+    padding-top: 16px;
+    border-top: 1px solid var(--gray);
+    text-align: center;
+  }
+  
+  .sidebar.dark .footer {
+    border-top: 1px solid var(--dark-hover);
+  }
+  
+  .footer .profile {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 12px;
+    border-radius: 6px;
+    background-color: var(--white);
+    cursor: pointer;
+    margin-top: 10px;
+    transition: background-color 0.3s ease, box-shadow 0.3s ease;
+  }
+  
+  .sidebar.dark .footer .profile {
+    background-color: var(--dark-hover);
+  }
+  
+  .footer .profile:hover {
+    background-color: var(--light-blue);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+  }
+  
+  .sidebar.dark .footer .profile:hover {
+    background-color: var(--dark-highlight);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.4);
+  }
+  
+  .footer .profile img {
+    height: 40px;
+    width: 40px;
+    border-radius: 50%;
+    margin-right: 10px;
+  }
+  
+  .footer .profile-info {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 4px; /* Reduce spacing between name and email */
+  }
+  
+  .footer .exit-icon {
+    font-size: 18px;
+    margin-left: auto;
+    color: var(--light-green);
+  }
+  
+  .sidebar.dark .footer .exit-icon {
+    color: var(--dark-icon);
+  }
+  
+  .footer .profile-info .name {
+    font-weight: bold;
+    color: var(--light-green);
+  }
+  
+  .sidebar.dark .footer .profile-info .name {
+    color: var(--dark-text);
+  }
+  
+  .footer .profile-info p {
+    margin: 0;
+    font-size: 13px;
+    color: var(--light-green);
+  }
+  
+  .sidebar.dark .footer .profile-info p {
+    color: var(--dark-text);
+  }
+  
+  /* Animations */
+  @keyframes fadeIn {
+    from {
+      opacity: 0;
+      transform: translateY(-10px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  /* Default Sidebar Styles */
+.sidebar {
+  width: 300px; /* Full width for the sidebar */
+  height: 100vh; /* Full viewport height */
+  position: fixed; /* Fixed to the left of the screen */
+  top: 0;
+  left: 0; /* Stick to the left */
+  background-color: var(--light-blue);
+  border-right: 1px solid var(--gray);
+  display: flex;
+  flex-direction: column;
+  padding: 16px;
+  box-sizing: border-box;
+  transition: transform 0.3s ease-in-out; /* Smooth transition for sliding */
+  z-index: 1000;
+}
+
+/* Sidebar Hidden on Small Screens */
+.sidebar {
+  transform: translateX(0); /* Visible by default */
+}
+
+.sidebar.open {
+  transform: translateX(0); /* Slide in when open */
+}
+
+.sidebar.closed {
+  transform: translateX(-100%); /* Hidden on small screens */
+}
+
+.sidebar.light {
+  background-color: var(--light-blue);
+}
+
+.sidebar.dark {
+  background-color: var(--dark-bg);
+}
+
+/* Hamburger Menu (Visible on Small Screens Only) */
+.hamburger-menu {
+  display: none; /* Hidden by default */
+  position: fixed; /* Fixed position for the hamburger */
+  top: 0px; /* Space from the top */
+  left: 0px; /* Space from the left */
+  z-index: 1100; /* Ensure it's above other content */
+  background: var(--white);
+  padding: 8px;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+  cursor: pointer;
+  height: 100vh;
+  width: 4vw ;
+  background-color: var(--light-blue);
+  color: var(--light-green);
+
+}
+
+
+
+/* Responsive Styles */
+@media (max-width: 768px) {
+  .sidebar {
+    transform: translateX(-100%); /* Hidden by default on small screens */
+  }
+
+  .sidebar.open {
+    transform: translateX(5vw); /* Slide in when open */
+  }
+
+  .hamburger-menu {
+    display: block; /* Show hamburger menu on small screens */
+  }
+}
+
+.logout-div {
+  position: absolute;
+  bottom: 70px;
+  right: 20px;
+  z-index: 1000;
+}
+
+.logout-div button {
+  background-color: var(--light-green);
+  border: none;
+  padding: 8px 16px;
+  border-radius: 4px;
+  color: var(--white);
+  font-size: 14px;
+  cursor: pointer;
+  transition: background-color 0.3s ease;
+}
+
+.logout-div button:hover {
+  background-color: var(--dark-highlight);
+}
+
+.logo {
+  display: flex;
+  align-items: center;
+  animation: fadeIn 1s ease-in-out;
+  width: 100%;
+  height: auto;
+}
+  

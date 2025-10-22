@@ -1,0 +1,9 @@
+.custom-toast {
+    background: var(--light-blue);
+    color: var(--dark-bg);
+    border-radius: 8px;
+    padding: 16px;
+    animation: rollIn 0.8s ease-in-out;
+    font-family: 'Arial', sans-serif;
+  }
+  

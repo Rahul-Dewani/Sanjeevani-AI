@@ -1,0 +1,529 @@
+/* Existing styles remain the same */
+.records-wrapper {
+    width: 100%;
+    margin: 20px auto;
+    padding: 20px 0;
+    font-family: Arial, sans-serif;
+    animation: fadeIn 0.6s ease-out;
+    color: var(--dark-text);
+  }
+  
+  .records-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+    font-size: 28px;
+    font-weight: bold;
+    color: var(--highlight);
+  }
+
+  
+  .search-bar {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  
+  .search-bar input {
+    padding: 10px 15px;
+    border: 1px solid var(--gray);
+    border-radius: 8px;
+    font-size: 14px;
+    width: 250px;
+    transition: border-color 0.3s ease;
+  }
+  
+  .search-bar input:focus {
+    outline: none;
+    border-color: var(--light-green);
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+  }
+  
+  .search-bar .search-btn {
+    padding: 10px;
+    background-color: var(--light-green);
+    color: var(--white);
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 18px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: background-color 0.3s ease;
+  }
+  
+  .search-bar .search-btn:hover {
+    background-color: #5b7c7d;
+  }
+  
+  .records-list {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+  }
+  
+  .record-cell {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 20px;
+    background-color: var(--light-card-bg);
+    border: 1px solid var(--gray);
+    border-radius: 8px;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+    opacity: 0;
+    transform: translateY(20px);
+    animation: fadeInSmooth 0.6s ease-out forwards;
+  }
+  
+  /* Highlight searched results */
+  .record-cell.highlight {
+    border-color: var(--light-green);
+    box-shadow: 0 0 15px rgba(0, 255, 0, 0.3);
+  }
+  
+  /* Fade-in animation for filtered records */
+  @keyframes fadeInSmooth {
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+  
+  .record-left {
+    flex: 3;
+  }
+  
+  .record-header {
+    display: flex;
+    justify-content: flex-start;
+    align-items: center;
+    gap:5px;
+    font-size: 16px;
+    font-weight: bold;
+    margin-bottom: 15px;
+  }
+  
+  .record-name {
+    color: var(--highlight);
+  }
+  
+  .record-details p {
+    font-size: 14px;
+    margin: 5px 0;
+    color: var(--dark-text);
+  }
+  
+  /* Status Badge Styling */
+  .status-badge {
+    padding: 5px 10px;
+    border-radius: 8px;
+    font-size: 12px;
+    font-weight: bold;
+    text-transform: capitalize;
+    margin-left: 10px;
+  }
+  
+  /* Status-specific colors */
+  .status-badge.critical, .severe {
+    background-color: #ff4d4d;
+    color: white;
+  }
+  
+  .status-badge.pending, .moderate {
+    background-color: #ffd633;
+    color: white;
+  }
+  
+  .status-badge.reviewed, .mild {
+    background-color: #4caf50;
+    color: white;
+  }
+  
+  .record-right {
+    flex: 1;
+    display: flex;
+    justify-content: flex-end;
+    align-items: center;
+  }
+  
+  .download-btn {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 14px;
+    color: var(--light-green);
+    background-color: var(--white);
+    padding: 10px 15px;
+    border: 1px solid var(--gray);
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    text-decoration: none;
+  }
+  
+  .download-btn:hover {
+    background-color: var(--light-green);
+    color: var(--white);
+    transform: scale(1.05);
+  }
+
+  /* Lighter shades for the status badges */
+.status-badge {
+    padding: 5px 10px;
+    border-radius: 8px;
+    font-size: 12px;
+    font-weight: bold;
+    text-transform: capitalize;
+    margin-left: 10px;
+  }
+  
+  /* Status-specific colors with lighter tones */
+  .status-badge.critical {
+    background-color: #ffcccc; /* Light red */
+    color: #d9534f; /* Muted red for text */
+  }
+  
+  .status-badge.pending {
+    background-color: #fff5cc; /* Light yellow */
+    color: #f0ad4e; /* Muted orange for text */
+  }
+  
+  .status-badge.reviewed {
+    background-color: #d9f2d9; /* Light green */
+    color: #5cb85c; /* Muted green for text */
+  }
+  
+  /* Highlight searched results with a subtle glow effect */
+  .record-cell.highlight {
+    border-color: #b3e6cc; /* Soft green border */
+    box-shadow: 0 0 10px rgba(179, 230, 204, 0.5); /* Subtle green glow */
+  }
+  
+  /* Fade-in animation for smoother filtered records */
+  @keyframes fadeInSmooth {
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+  
+  .record-cell {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 20px;
+    background-color: var(--light-card-bg);
+    border: 1px solid var(--gray);
+    border-radius: 8px;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+    opacity: 0;
+    transform: translateY(20px);
+    animation: fadeInSmooth 0.6s ease-out forwards;
+  }
+  
+  /* Lighter shades for hover effects */
+  .record-cell:hover {
+    box-shadow: 0 8px 15px rgba(0, 0, 0, 0.15); /* Soft shadow */
+    transform: translateY(-2px);
+  }
+  
+  /* Download button remains with subtle changes */
+  .download-btn {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 14px;
+    color: var(--light-green);
+    background-color: var(--white);
+    padding: 10px 15px;
+    border: 1px solid var(--gray);
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    text-decoration: none;
+  }
+  
+  .download-btn:hover {
+    background-color: var(--light-green);
+    color: var(--white);
+    transform: scale(1.05);
+  }
+  
+  /* General Styling */
+.records-wrapper {
+  width: 100%;
+  margin: 20px auto;
+  padding: 20px 0;
+  font-family: Arial, sans-serif;
+  animation: fadeIn 0.6s ease-out;
+  color: var(--dark-text);
+}
+
+.records-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+  font-size: 28px;
+  font-weight: bold;
+  color: var(--highlight);
+}
+
+.search-bar {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.search-bar input {
+  padding: 10px 15px;
+  border: 1px solid var(--gray);
+  border-radius: 8px;
+  font-size: 14px;
+  width: 250px;
+  transition: border-color 0.3s ease;
+}
+
+.search-bar input:focus {
+  outline: none;
+  border-color: var(--light-green);
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+}
+
+.search-bar .search-btn {
+  padding: 10px;
+  background-color: var(--light-green);
+  color: var(--white);
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 18px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background-color 0.3s ease;
+}
+
+.search-bar .search-btn:hover {
+  background-color: #5b7c7d;
+}
+
+.records-list {
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+}
+
+.record-cell {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 20px;
+  background-color: var(--light-card-bg);
+  border: 1px solid var(--gray);
+  border-radius: 8px;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+  opacity: 0;
+  transform: translateY(20px);
+  animation: fadeInSmooth 0.6s ease-out forwards;
+}
+
+/* Highlight searched results */
+.record-cell.highlight {
+  border-color: var(--light-green);
+  box-shadow: 0 0 15px rgba(0, 255, 0, 0.3);
+}
+
+/* Fade-in animation for filtered records */
+@keyframes fadeInSmooth {
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.record-left {
+  flex: 3;
+}
+
+.record-header {
+  display: flex;
+  justify-content: flex-start;
+  align-items: center;
+  gap: 5px;
+  font-size: 16px;
+  font-weight: bold;
+  margin-bottom: 15px;
+}
+
+.record-name {
+  color: var(--highlight);
+}
+
+.record-details p {
+  font-size: 14px;
+  margin: 5px 0;
+  color: var(--dark-text);
+}
+
+/* Status Badge Styling */
+.status-badge {
+  padding: 5px 10px;
+  border-radius: 8px;
+  font-size: 12px;
+  font-weight: bold;
+  text-transform: capitalize;
+  margin-left: 10px;
+}
+
+/* Status-specific colors */
+.status-badge.critical, .severe {
+  background-color: #ffcccc; /* Light red */
+  color: #d9534f; /* Muted red for text */
+}
+
+.status-badge.pending, .moderate {
+  background-color: #fff5cc; /* Light yellow */
+  color: #f0ad4e; /* Muted orange for text */
+}
+
+.status-badge.reviewed, .mild {
+  background-color: #d9f2d9; /* Light green */
+  color: #5cb85c; /* Muted green for text */
+}
+
+.record-right {
+  flex: 1;
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+}
+
+.download-btn {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 14px;
+  color: var(--light-green);
+  background-color: var(--white);
+  padding: 10px 15px;
+  border: 1px solid var(--gray);
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  text-decoration: none;
+}
+
+.download-btn:hover {
+  background-color: var(--light-green);
+  color: var(--white);
+  transform: scale(1.05);
+}
+
+/* Responsiveness */
+@media (max-width: 768px) {
+  .records-wrapper {
+    padding: 15px;
+  }
+
+  .records-header {
+    font-size: 24px;
+  }
+
+  .search-bar input {
+    width: 200px;
+  }
+
+  .record-cell {
+    flex-direction: column;
+    padding: 15px;
+  }
+
+  .record-left {
+    width: 100%;
+  }
+
+  .record-right {
+    width: 100%;
+    display: flex;
+    justify-content: flex-start;
+    margin-top: 10px;
+  }
+
+  /* Adjust the download button to show only the icon on smaller screens */
+  .download-btn {
+    justify-content: center;
+    padding: 8px;
+  }
+
+  .download-btn span {
+    display: none; /* Hide the text */
+  }
+}
+
+@media (max-width: 480px) {
+  .records-header {
+    font-size: 20px;
+  }
+
+  .search-bar input {
+    width: 150px;
+  }
+
+  .download-btn {
+    font-size: 18px;
+    padding: 8px;
+  }
+
+  .download-btn span {
+    display: none; /* Hide the text */
+  }
+
+  .record-header {
+    font-size: 14px;
+  }
+
+  .record-details p {
+    font-size: 12px;
+  }
+
+  .record-left {
+    padding: 10px;
+  }
+  
+  .record-cell {
+    padding: 10px;
+  }
+  
+  .record-name {
+    font-size: 18px;
+  }
+}
+
+/* Status-specific colors */
+.status-badge.critical, .severe {
+  background-color: #ffcccc; /* Light red */
+  color: #d9534f; /* Muted red for text */
+  padding: 2px;
+  border-radius: 4px;
+}
+
+.status-badge.pending, .moderate {
+  background-color: #fff5cc; /* Light yellow */
+  color: #f0ad4e; /* Muted orange for text */
+  padding: 2px;
+  border-radius: 4px;
+}
+
+.status-badge.reviewed, .mild {
+  background-color: #d9f2d9;
+  color: #5cb85c;
+  padding: 2px;
+  border-radius: 4px;
+  
+}
+
+  

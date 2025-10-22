@@ -1,0 +1,584 @@
+  
+  :root {
+      --white: #ffffff;
+      --light-gray: #f9f9f9;
+      --dark-gray: #333333;
+      --divider-gray: #dddddd;
+      --critical-red: #ff4d4d;
+      --pending-yellow: #ffd700;
+      --reviewed-green: #4caf50;
+    }
+    
+    /* Container */
+    .report-container {
+      background-color: var(--white);
+      color: var(--dark-gray);
+      padding: 20px;
+      border-radius: 8px;
+      box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+      font-family: "Arial", sans-serif;
+      width: 100%;
+      max-width: 800px;
+      margin: auto;
+    }
+    
+    /* Header */
+    .report-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding-bottom: 0px;
+    }
+    
+    .logo {
+      height: 100px;
+      width: 100px;
+    }
+    
+    .doctor-info {
+      text-align: center;
+      flex: 1;
+    }
+    
+    .doctor-info h1 {
+      font-size: 18px;
+      margin: 0;
+    }
+    
+    .doctor-info p {
+      margin: 5px 0;
+      font-size: 14px;
+      color: var(--dark-gray);
+    }
+    
+    .patient-status {
+      padding: 5px 15px;
+      border-radius: 20px;
+      font-weight: bold;
+      font-size: 14px;
+      color: var(--white);
+    }
+    
+    .patient-status.critical, .severe {
+      background-color: var(--critical-red);
+      background-color: #ffcccc; /* Light red */
+      color: #d9534f; /* Muted red for text */
+    }
+    
+    .patient-status.pending, .moderate {
+      background-color: var(--pending-yellow);
+      color: var(--dark-gray);
+      background-color: #fff5cc; /* Light yellow */
+      color: #f0ad4e; /* Muted orange for text */
+    }
+    
+    .patient-status.reviewed, .mild {
+      background-color: var(--reviewed-green);
+      background-color: #d9f2d9;
+      color: #5cb85c;
+    }
+    
+    /* Divider */
+    .divider {
+      border: none;
+      border-top: 1px solid var(--divider-gray);
+      margin: 15px 0;
+    }
+    
+    /* Body */
+    .report-body {
+      display: flex;
+      gap: 20px;
+    }
+    
+    .output-section {
+      flex: 1;
+    }
+    
+    .output-section h2 {
+      font-size: 16px;
+      font-weight: bold;
+      margin-bottom: 10px;
+    }
+    
+    .output-section h3 {
+      font-size: 14px;
+      margin: 10px 0 5px;
+    }
+    
+    .output-section ul {
+      margin-left: 0px;
+      list-style-type: disc;
+    }
+    
+    .image-section {
+      flex: 1;
+      text-align: center;
+    }
+    
+    .image-section h2 {
+      font-size: 16px;
+      font-weight: bold;
+      margin-bottom: 10px;
+    }
+    
+    .image-section img {
+      max-width: 100%;
+      border: 1px solid var(--divider-gray);
+      border-radius: 8px;
+      border-bottom: none;
+    }
+    
+    /* Footer */
+    .signature-section {
+      text-align: right;
+      margin-top: 20px;
+    }
+    
+    .signature-section h2 {
+      font-size: 16px;
+      font-weight: bold;
+      margin-bottom: 10px;
+    }
+    
+    .signature-section img {
+      height: 60px;
+      width: auto;
+    }
+  /* Download Button */
+  .download-button {
+      margin-top: 20px;
+      background-color: #5cb85c;
+      color: white;
+      padding: 10px 15px;
+      font-size: 14px;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+      text-align: center;
+      display: block;
+      margin-left: auto;
+    }
+    
+    .download-button:hover {
+      background-color: #45a049;
+    }
+    
+    /* Updated Output Section */
+  .output-section h3 {
+      font-size: 14px;
+      margin: 10px 0 5px;
+    }
+    
+    .output-section ul {
+      margin: 0px; /* Add spacing for better alignment */
+      list-style-type: disc; /* Use bullet points */
+      padding-left: 15px;
+    }
+    
+    .output-section li {
+      margin-bottom: 0px; /* Add spacing between bullet points */
+    }
+    
+    /* Ensure the main report container fits without scrolling */
+    .report-container {
+      overflow: hidden; /* Prevent scrollbars */
+      height: auto; /* Allow dynamic content height */
+    }
+    
+    /* Adjustments for fitting content into A4 PDF output */
+    @media print {
+      .report-container {
+        min-width: 210mm;
+        /* height: 360mm; */
+        margin: 0 auto;
+        padding: 15mm; /* Ensure content fits with padding */
+        padding-bottom: 0px;
+        box-shadow: none; /* Remove shadows for PDF */
+        max-height: 1000mm;
+      }
+    
+    
+    }
+    
+
+    .report-body {
+      display: flex;
+      flex-direction: row; /* Align text and image side by side */
+      flex-wrap: wrap; /* Ensure responsiveness */
+      gap: 20px;
+  }
+
+  .text-content {
+      width: 60%;
+  }
+
+  .image-section {
+      width: 40%;
+      text-align: center;
+  }
+
+  .image-section img {
+      max-width: 100%;
+      border-radius: 8px;
+  }
+  /* Root Variables */
+  :root {
+    --white: #ffffff;
+    --light-gray: #f9f9f9;
+    --dark-gray: #333333;
+    --divider-gray: #dddddd;
+    --critical-red: #ff4d4d;
+    --pending-yellow: #ffd700;
+    --reviewed-green: #4caf50;
+  }
+
+  /* Container */
+  .report-container {
+    background-color: var(--white);
+    color: var(--dark-gray);
+    padding: 20px;
+    border-radius: 8px;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+    font-family: "Arial", sans-serif;
+    width: 100%;
+    margin: auto;
+    overflow: visible; /* Allow content to expand without restrictions */
+  }
+
+  /* Header */
+  .report-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding-bottom: 15px;
+  }
+
+  .logo {
+    height: 90px;
+    width: 90px;
+  }
+
+  .doctor-info {
+    text-align: center;
+    flex: 1;
+  }
+
+  .doctor-info h1 {
+    font-size: 18px;
+    margin: 0;
+  }
+
+  .doctor-info p {
+    margin: 5px 0;
+    font-size: 14px;
+    color: var(--dark-gray);
+  }
+
+  .patient-status {
+    padding: 5px 15px;
+    border-radius: 20px;
+    font-weight: bold;
+    font-size: 14px;
+    color: var(--white);
+  }
+
+  .patient-status.critical {
+    background-color: var(--critical-red);
+  }
+
+  .patient-status.pending {
+    background-color: var(--pending-yellow);
+    color: var(--dark-gray);
+  }
+
+  .patient-status.reviewed {
+    background-color: var(--reviewed-green);
+  }
+
+  /* Divider */
+  .divider {
+    border: none;
+    border-top: 1px solid var(--divider-gray);
+    margin: 15px 0;
+  }
+
+  /* Body */
+  .report-body {
+    display: flex;
+    gap: 20px;
+    align-items: flex-start; /* Align image and text at the top */
+  }
+
+  .text-content {
+    width: 60%;
+  }
+
+  .image-section {
+    width: 40%;
+    text-align: center;
+  }
+
+  .image-section img {
+    max-width: 100%;
+    border-radius: 8px 8px 0px 0px;
+  }
+
+  /* Footer */
+  .signature-section {
+    text-align: right;
+    margin-top: 20px;
+  }
+
+  .signature-section h2 {
+    font-size: 16px;
+    font-weight: bold;
+    margin-bottom: 10px;
+  }
+
+  .signature-section img {
+    height: 60px;
+    width: auto;
+  }
+
+  /* Updated Output Section */
+  .output-section h3 {
+    font-size: 14px;
+    margin: 10px 0 5px;
+  }
+
+  .output-section ul {
+    margin: 0px; /* Add spacing for better alignment */
+    list-style-type: disc; /* Use bullet points */
+    padding-left: 15px;
+    max-height: fit-content;
+  }
+
+  .output-section li {
+    margin-bottom: 0px; /* Add spacing between bullet points */
+    background: white;
+    border: none;
+    box-shadow: none;
+    padding: 2px;
+  }
+
+  /* Remove height restrictions */
+  .report-container {
+    overflow: visible; /* Prevent any scrollbars from appearing */
+  }
+
+  .output-section h3 {
+    font-size: 16px;
+    margin: 10px 0 5px;
+  }
+
+  .output-section ul {
+    list-style-type: disc; /* Ensure bullet points appear */
+    padding-left: 25px; /* Increase indentation */
+    margin-left: 0; /* Prevent unwanted margin */
+}
+
+.output-section li {
+    margin-bottom: 5px; /* Add space between items */
+    display: list-item;
+}
+.report-container {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between; /* Ensures elements stay positioned correctly */
+  min-height: 100vh; /* Makes sure the container expands properly */
+  position: relative;
+  width: 210mm; /* or 794px */
+  max-height: 1000mm; /* or 1123px */
+  padding-bottom: 0px;
+  height: fit-content;
+}
+
+/* Signature and Download Button Wrapper */
+.signature-download-container {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  margin-top: auto; /* Pushes this section to the bottom */
+  padding: 20px;
+
+}
+
+/* Download button */
+.download-button {
+  margin-top: 10px;
+  margin-bottom: 10px;
+}
+
+/* Disclaimer */
+.disclaimer {
+  text-align: center;
+  font-size: 12px;
+  color: var(--dark-gray);
+  padding-bottom: 15px;
+  width: 100%;
+  border-top: 1px solid var(--divider-gray);
+  margin: 0px;
+}
+
+.logo, .doctor-info>h1, .signature-section>h2{
+  animation: none;
+  transition: none;
+}
+
+.signature-section>h2{
+  padding-top: 50px;
+}
+
+@media print{
+  .download-button {
+    display: none;
+  }
+}
+
+.image-section {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  margin-top: 20px;
+}
+
+.detected-features {
+  background-color: #f0f8ff;
+  padding:10px 10px;
+  padding-bottom: 0px ;
+  margin-top: 15px;
+  border-radius: 0px 0px 8px 8px;
+  /* box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1); */
+  width: fit-content;
+  max-width: 100%;
+  text-align: left;
+  margin-top: 0px;
+  border: 1px solid var(--divider-gray);
+  border-top:none;
+}
+
+.detected-features h3 {
+  font-size: 16px;
+  margin-bottom: 8px;
+}
+
+.detected-features ul {
+  padding-left: 0px;
+  list-style-type: none;
+}
+
+.detected-features li {
+  font-size: 14px;
+  color: #333;
+  margin-bottom: 4px;
+  background: white;
+  border: none;
+  box-shadow: none;
+  border-radius: none;
+  padding-top: 2px;
+  display: list-item;
+  background-color: transparent;
+}
+
+/* Floating Box / Subtle Overlay */
+.floating-box {
+  background-color: rgba(255, 255, 255, 0.8); /* Semi-transparent white */
+  color: var(--dark-gray);
+  padding: 15px;
+  border-radius: 8px;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+  border: 2px solid var(--divider-gray);
+  width: 250px;
+  font-family: "Arial", sans-serif;
+  z-index: 100;
+  display: flex;
+  flex-direction: column;
+  gap:5px;
+  
+}
+
+
+.floating-box h3 {
+  font-size: 20px;
+  font-weight: bold;
+  margin-bottom: 10px;
+  margin: 8px;
+  margin-left: 8px;
+  /* align-self: center; */
+}
+
+.floating-box p, .details p {
+  font-size: 16px;
+  font-weight: bold;
+
+  margin: 0px;
+  margin-left: 8px;
+}
+
+.details{
+  display: flex;
+  gap:35px;
+}
+
+.details p {
+  margin-bottom: 8px;
+}
+
+.extra{
+  width: 100%;
+}
+
+.floating-box{
+  padding: 0;
+  margin: 0;
+  margin-bottom:20px;
+}
+
+.btn {
+  padding: 10px 15px;
+  background-color: #007bff;
+  color: white;
+  border: none;
+  cursor: pointer;
+  margin: 5px;
+  border-radius: 5px;
+}
+
+.btn.cancel {
+  background-color: #ccc;
+}
+
+.btn.submit {
+  background-color: #5cb85c;
+}
+
+.modal {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.modal-content {
+  background: white;
+  padding: 20px;
+  border-radius: 10px;
+  width: 300px;
+  text-align: center;
+}
+
+textarea {
+  width: 100%;
+  margin: 10px 0;
+  padding: 5px;
+}
+
+.report{
+  background-color: #d9534f;
+}

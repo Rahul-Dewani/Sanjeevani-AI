@@ -1,0 +1,585 @@
+
+/* General Styling */
+.forum-wrapper {
+    margin: auto;
+    padding: 20px;
+    width: 80%;
+    max-width: 900px;
+    font-family: Arial, sans-serif;
+    color: var(--dark-text);
+  }
+  
+  .forum-header {
+    font-size: 28px;
+    font-weight: bold;
+    color: var(--highlight);
+    margin-bottom: 20px;
+    text-align: center;
+  }
+  
+  /* Floating Button for New Post */
+  .new-post-btn {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    background-color: var(--light-green);
+    color: var(--white);
+    border: none;
+    border-radius: 50%;
+    width: 50px;
+    height: 50px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    cursor: pointer;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+    font-size: 20px;
+  }
+  
+  .new-post-btn:hover {
+    background-color: #5b7c7d;
+  }
+  
+  /* Modal for New Post */
+  .new-post-modal {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.5);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+  }
+  
+  .new-post-container {
+    background-color: var(--white);
+    padding: 20px;
+    border-radius: 12px;
+    width: 400px;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+    padding-right: 50px;
+  }
+  
+  .new-post-container h3 {
+    margin-bottom: 20px;
+  }
+  
+  .new-post-container input,
+  .new-post-container textarea,
+  .new-post-container select {
+    width: 100%;
+    margin-bottom: 15px;
+    padding: 10px;
+    border: 1px solid var(--gray);
+    border-radius: 8px;
+  }
+  
+  .modal-buttons {
+    display: flex;
+    justify-content: flex-end;
+    gap: 10px;
+  }
+  
+  .modal-buttons button {
+    padding: 10px 20px;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+  }
+  
+  .modal-buttons button:first-of-type {
+    background-color: var(--gray);
+    color: var(--dark-text);
+  }
+  
+  .modal-buttons button:last-of-type {
+    background-color: var(--light-green);
+    color: var(--white);
+  }
+  
+  .modal-buttons button:hover {
+    opacity: 0.9;
+  }
+  
+  /* Post Styling */
+  .posts-container .post-item {
+    margin-bottom: 20px;
+    background-color: var(--white);
+    padding: 20px;
+    border-radius: 12px;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+  }
+  
+  .post-meta {
+    display: flex;
+    justify-content: space-between;
+    font-size: 12px;
+    color: var(--gray);
+    margin-top: 10px;
+  }
+  
+  .comments-section .top-comment {
+    font-weight: bold;
+    margin-bottom: 10px;
+  }
+  
+  .comment-btn{
+    background-color: var(--light-green);
+    color: var(--white);
+    border: none;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    cursor: pointer;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+    margin-top: 5px;
+    height: 25px;
+    font-size: 15px;
+    border-radius: 5px;
+    padding: 10px;
+    padding-top: 15px;
+    padding-bottom: 15px;
+  }
+  
+  .comments-section input{
+    margin-top: 10px;
+    font-size: 15px;
+    width: 95%;
+    height:25px;
+    border-radius: 5px;
+    padding-left:10px;
+    padding-top: 5px;
+    padding-bottom: 5px;
+  }
+  
+  .posts-container{
+    margin-top: 50px;
+  }
+  
+  /* General Styling */
+  .forum-wrapper {
+    margin: auto;
+    padding: 20px;
+    width: 80%;
+    max-width: 900px;
+    font-family: Arial, sans-serif;
+    color: var(--dark-text);
+  }
+  
+  .forum-header {
+    font-size: 28px;
+    font-weight: bold;
+    color: var(--highlight);
+    margin-bottom: 20px;
+    text-align: center;
+  }
+  
+  /* Floating Button for New Post */
+  .new-post-btn {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    background-color: var(--light-green);
+    color: var(--white);
+    border: none;
+    border-radius: 50%;
+    width: 50px;
+    height: 50px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    cursor: pointer;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+    font-size: 20px;
+  }
+  
+  .new-post-btn:hover {
+    background-color: #5b7c7d;
+  }
+  
+  /* Modal for New Post */
+  .new-post-modal {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.5);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+  }
+  
+  .new-post-container {
+    background-color: var(--white);
+    padding: 20px;
+    border-radius: 12px;
+    width: 400px;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+    padding-right: 50px;
+  }
+  
+  .new-post-container h3 {
+    margin-bottom: 20px;
+  }
+  
+  .new-post-container input,
+  .new-post-container textarea,
+  .new-post-container select {
+    width: 100%;
+    margin-bottom: 15px;
+    padding: 10px;
+    border: 1px solid var(--gray);
+    border-radius: 8px;
+  }
+  
+  .modal-buttons {
+    display: flex;
+    justify-content: flex-end;
+    gap: 10px;
+  }
+  
+  .modal-buttons button {
+    padding: 10px 20px;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+  }
+  
+  .modal-buttons button:first-of-type {
+    background-color: var(--gray);
+    color: var(--dark-text);
+  }
+  
+  .modal-buttons button:last-of-type {
+    background-color: var(--light-green);
+    color: var(--white);
+  }
+  
+  .modal-buttons button:hover {
+    opacity: 0.9;
+  }
+  
+  /* Post Styling */
+  .posts-container .post-item {
+    margin-bottom: 20px;
+    background-color: var(--white);
+    padding: 20px;
+    border-radius: 12px;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+  }
+  
+  /* Comments Section */
+  .comments-section input {
+    margin-top: 10px;
+    font-size: 15px;
+    width: 95%;
+    height: 25px;
+    border-radius: 5px;
+    padding-left: 10px;
+    padding-top: 5px;
+    padding-bottom: 5px;
+  }
+  
+  .posts-container {
+    margin-top: 50px;
+  }
+  
+  /* Responsive Styles */
+  @media (max-width: 600px) {
+    .forum-wrapper {
+      width: 90%;
+    }
+  
+    /* Adjust New Post Modal */
+    .new-post-container {
+      width: 80%;
+      padding: 15px;
+    }
+  
+    /* Adjust Floating Button Size */
+    .new-post-btn {
+      width: 40px;
+      height: 40px;
+      font-size: 18px;
+    }
+  
+    /* Post Items Adjustments */
+    .posts-container .post-item {
+      padding: 15px;
+      margin: 10px;
+    }
+  
+    /* Comments Section */
+    .comments-section input {
+      width: 90%;
+    }
+  }
+  
+  @media (max-width: 400px) {
+    .forum-header {
+      font-size: 22px;
+    }
+  
+    .new-post-container {
+      width: 90%;
+      padding: 10px;
+    }
+  
+    .posts-container .post-item {
+      padding: 10px;
+      margin: 5px;
+    }
+  
+    .new-post-btn {
+      width: 35px;
+      height: 35px;
+      font-size: 16px;
+    }
+  }
+  
+  .comment-box {
+    margin-bottom: 10px;
+  }
+  
+  .view-comments-btn {
+    background-color: var(--light-green);
+    color: var(--white);
+    padding: 5px 10px;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    font-size: 14px;
+  }
+  
+  .view-comments-btn:hover {
+    background-color: #5b7c7d;
+  }
+  
+  /* General Styling */
+  .forum-wrapper {
+    margin: auto;
+    padding: 10px; /* Reduced padding */
+    width: 80%;
+    max-width: 900px;
+    font-family: Arial, sans-serif;
+    color: var(--dark-text);
+  }
+  
+  .forum-header {
+    font-size: 24px; /* Slightly smaller font size */
+    font-weight: bold;
+    color: var(--highlight);
+    margin-bottom: 15px; /* Reduced margin */
+    text-align: center;
+  }
+  
+  /* Floating Button for New Post */
+  .new-post-btn {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    background-color: var(--light-green);
+    color: var(--white);
+    border: none;
+    border-radius: 50%;
+    width: 45px; /* Reduced size */
+    height: 45px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    cursor: pointer;
+    box-shadow: 0 3px 10px rgba(0, 0, 0, 0.2);
+    font-size: 18px; /* Adjusted font size */
+  }
+  
+  .new-post-btn:hover {
+    background-color: #5b7c7d;
+  }
+  
+  /* Modal for New Post */
+  .new-post-modal {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.5);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+  }
+  
+  .new-post-container {
+    background-color: var(--white);
+    padding: 15px; /* Reduced padding */
+    border-radius: 8px; /* Reduced border radius */
+    width: 350px; /* Slightly smaller width */
+    box-shadow: 0 3px 15px rgba(0, 0, 0, 0.2);
+  }
+  
+  .new-post-container h3 {
+    margin-bottom: 15px;
+    font-size: 18px; /* Slightly smaller heading size */
+  }
+  
+  .new-post-container input,
+  .new-post-container textarea,
+  .new-post-container select {
+    width: 100%;
+    margin-bottom: 10px; /* Reduced spacing */
+    padding: 8px; /* Compact input fields */
+    border: 1px solid var(--gray);
+    border-radius: 5px; /* Smaller radius */
+  }
+  
+  .modal-buttons {
+    display: flex;
+    justify-content: flex-end;
+    gap: 8px;
+  }
+  
+  .modal-buttons button {
+    padding: 8px 15px; /* Reduced button padding */
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+  }
+  
+  .modal-buttons button:first-of-type {
+    background-color: var(--gray);
+    color: var(--dark-text);
+  }
+  
+  .modal-buttons button:last-of-type {
+    background-color: var(--light-green);
+    color: var(--white);
+  }
+  
+  .modal-buttons button:hover {
+    opacity: 0.9;
+  }
+  
+  /* Post Styling */
+  .posts-container .post-item {
+    margin-bottom: 15px; /* Reduced spacing between posts */
+    background-color: var(--white);
+    padding: 15px; /* Reduced padding */
+    border-radius: 8px; /* Reduced border radius */
+    box-shadow: 0 3px 10px rgba(0, 0, 0, 0.1);
+  }
+  
+  /* Comments Section */
+  .comments-section input {
+    margin-top: 8px; /* Slightly smaller margin */
+    font-size: 14px; /* Smaller font size */
+    width: 95%;
+    height: 22px; /* Slightly reduced height */
+    border-radius: 5px;
+    padding-left: 8px;
+    padding-top: 4px;
+    padding-bottom: 4px;
+  }
+  
+  .posts-container {
+    margin-top: 30px; /* Reduced top margin */
+  }
+  
+  .comment-box {
+    margin-bottom: 8px; /* Reduced spacing between comments */
+  }
+  
+  .view-comments-btn {
+    background-color: var(--light-green);
+    color: var(--white);
+    padding: 8px 8px; /* Compact button size */
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 13px; /* Reduced font size */
+  }
+  
+  .view-comments-btn:hover {
+    background-color: #5b7c7d;
+  }
+  
+  /* Responsive Styles */
+  @media (max-width: 600px) {
+    .forum-wrapper {
+      width: 90%;
+    }
+  
+    /* Adjust New Post Modal */
+    .new-post-container {
+      width: 90%;
+      padding: 10px;
+    }
+  
+    /* Adjust Floating Button Size */
+    .new-post-btn {
+      width: 40px;
+      height: 40px;
+      font-size: 16px;
+    }
+  
+    /* Post Items Adjustments */
+    .posts-container .post-item {
+      padding: 10px;
+      margin: 8px;
+    }
+  
+    /* Comments Section */
+    .comments-section input {
+      width: 90%;
+    }
+  }
+  
+  @media (max-width: 400px) {
+    .forum-header {
+      font-size: 20px;
+    }
+  
+    .new-post-container {
+      width: 90%;
+      padding: 8px;
+    }
+  
+    .posts-container .post-item {
+      padding: 8px;
+      margin: 5px;
+    }
+  
+    .new-post-btn {
+      width: 35px;
+      height: 35px;
+      font-size: 14px;
+    }
+  }
+  
+  .comments-section input {
+    margin-top: 8px;
+    font-size: 14px;
+    width: 95%;
+    height: 22px;
+    border-radius: 5px;
+    padding-left: 8px;
+    padding-top: 4px;
+    padding-bottom: 4px;
+    border: 1px solid var(--gray); /* Default border color */
+    transition: border-color 0.3s ease; /* Smooth transition for focus */
+  }
+  
+  .comments-section input:focus {
+    outline: none;
+    border-color: var(--light-green); /* Use theme color for focus */
+    box-shadow: 0 0 5px rgba(0, 128, 0, 0.3); /* Subtle glow effect */
+  }
+  
+
+  
+  
+  
+  
+  
