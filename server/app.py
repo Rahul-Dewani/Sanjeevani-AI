@@ -1,13 +1,17 @@
 import os
 import re
-from flask import Flask, request, jsonify, send_from_directory, url_for
+from flask import Flask, request, jsonify, send_from_directory, url_for, redirect
 from flask_cors import CORS
-import sqlite3
+import mysql.connector
+from mysql.connector import Error
 from werkzeug.security import generate_password_hash, check_password_hash
 from werkzeug.utils import secure_filename
+from dotenv import load_dotenv
 import json
 from pinecone import Pinecone
 from langchain_huggingface import HuggingFaceEmbeddings
+import boto3
+from botocore.exceptions import ClientError
 import predict, report2
 import smtplib
 import random
@@ -24,22 +28,72 @@ import cv2
 # Flask App Setup
 app = Flask(__name__)
 CORS(app, resources={r"/*": {"origins": "*"}}, supports_credentials=True)
+load_dotenv()
 
-# SQLite Database
-DATABASE = 'doctors.db'
-UPLOAD_FOLDER = 'uploads'
-OUTPUT_FOLDER = 'output'
-USER_FOLDER='user'
+# MySQL Database Configuration
+DB_CONFIG = {
+    'host': os.environ.get('RDS_HOST'),
+    'user': os.environ.get('RDS_USER'),
+    'password': os.environ.get('RDS_PASSWORD'),
+    'database': os.environ.get('RDS_DATABASE')
+}
 
+# S3 Configuration
+S3_BUCKET = os.environ.get('S3_BUCKET')  # Replace with your bucket name
+S3_UPLOAD_FOLDER = 'uploads/'
+S3_OUTPUT_FOLDER = 'output/'
+S3_USER_FOLDER = 'user/'
 
-# Configure app
-app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
-os.makedirs(UPLOAD_FOLDER, exist_ok=True)
-app.config['OUTPUT_FOLDER'] = OUTPUT_FOLDER
-os.makedirs(OUTPUT_FOLDER, exist_ok=True)
-app.config['USER_FOLDER'] = USER_FOLDER
-if not os.path.exists(USER_FOLDER):
-    os.makedirs(USER_FOLDER)
+# Local folders (fallbacks used when running locally)
+app.config['UPLOAD_FOLDER'] = os.environ.get('UPLOAD_FOLDER', os.path.join(os.getcwd(), 'uploads'))
+app.config['OUTPUT_FOLDER'] = os.environ.get('OUTPUT_FOLDER', os.path.join(os.getcwd(), 'output'))
+
+# Ensure local folders exist
+os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
+os.makedirs(app.config['OUTPUT_FOLDER'], exist_ok=True)
+
+# AWS S3 client setup
+s3_client = boto3.client(
+    's3',
+    aws_access_key_id=os.getenv('AWS_ACCESS_KEY_ID'),      # Replace with your access key
+    aws_secret_access_key=os.getenv('AWS_SECRET_ACCESS_KEY'),  # Replace with your secret key
+    region_name='ap-south-1'                 # Replace with your region (e.g., 'us-east-1')
+)
+
+def upload_file_to_s3(file_obj, folder, filename):
+    """Upload a file to S3 bucket in specified folder"""
+    try:
+        key = f"{folder}{filename}"
+        s3_client.upload_fileobj(file_obj, S3_BUCKET, key)
+        url = f"https://{S3_BUCKET}.s3.amazonaws.com/{key}"
+        return url
+    except ClientError as e:
+        print(f"Error uploading to S3: {str(e)}")
+        return None
+
+def delete_file_from_s3(folder, filename):
+    """Delete a file from S3 bucket"""
+    try:
+        key = f"{folder}{filename}"
+        s3_client.delete_object(Bucket=S3_BUCKET, Key=key)
+        return True
+    except ClientError as e:
+        print(f"Error deleting from S3: {str(e)}")
+        return False
+
+def get_s3_presigned_url(folder, filename, expiration=3600):
+    """Generate a presigned URL for an S3 object"""
+    try:
+        key = f"{folder}{filename}"
+        url = s3_client.generate_presigned_url(
+            'get_object',
+            Params={'Bucket': S3_BUCKET, 'Key': key},
+            ExpiresIn=expiration
+        )
+        return url
+    except ClientError as e:
+        print(f"Error generating presigned URL: {str(e)}")
+        return None
 
 app.config["MAIL_SERVER"] = "smtp.gmail.com"  # Use your email provider's SMTP
 app.config["MAIL_PORT"] = 587  # 465 for SSL, 587 for TLS
@@ -140,69 +194,93 @@ def send_otp_email(recipient_email, otp):
         print(f"❌ General error: {e}")
 # Database Connection Helper
 def get_db_connection():
-    conn = sqlite3.connect(DATABASE)
-    conn.row_factory = sqlite3.Row
-    return conn
+    """Return a mysql.connector connection or None."""
+    try:
+        conn = mysql.connector.connect(
+            host=DB_CONFIG.get('host'),
+            user=DB_CONFIG.get('user'),
+            password=DB_CONFIG.get('password'),
+            database=DB_CONFIG.get('database'),
+            autocommit=False
+        )
+        return conn
+    except Error as e:
+        print(f"Error connecting to MySQL Database: {e}")
+        return None
 
 # Initialize Database Tables
-with get_db_connection() as conn:
-    conn.execute('''
-        CREATE TABLE IF NOT EXISTS doctors (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            email TEXT UNIQUE NOT NULL,
-            phone CHAR(10) NOT NULL, 
-            password TEXT NOT NULL,
-            first_name TEXT,
-            last_name TEXT,
-            license_number TEXT,
-            dob TEXT,
-            years_of_experience INTEGER,
-            clinic_address TEXT,
-            profile_image TEXT,
-            specialization TEXT
-        )
-    ''')
-    conn.execute('''
-        CREATE TABLE IF NOT EXISTS reports (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            doctor_id INTEGER NOT NULL,
-            first_name TEXT NOT NULL,
-            last_name TEXT NOT NULL,
-            age INTEGER NOT NULL,
-            gender TEXT NOT NULL,
-            clinical_history TEXT NOT NULL,
-            medical_image TEXT,
-            organ TEXT NOT NULL,
-            disease TEXT NOT NULL,
-            features TEXT,
-            disease_image TEXT,
-            report TEXT NOT NULL,
-            report_pdf BLOB,
-            FOREIGN KEY (doctor_id) REFERENCES doctors (id)
-        )
-    ''')
-    conn.execute('''
-        CREATE TABLE IF NOT EXISTS posts (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            doctor_id INTEGER NOT NULL,
-            title TEXT NOT NULL,
-            content TEXT NOT NULL,
-            category TEXT NOT NULL,
-            likes INTEGER DEFAULT 0,
-            FOREIGN KEY (doctor_id) REFERENCES doctors (id)
-        )
-    ''')
-    conn.execute('''
-        CREATE TABLE IF NOT EXISTS comments (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            post_id INTEGER NOT NULL,
-            doctor_id INTEGER NOT NULL,
-            content TEXT NOT NULL,
-            FOREIGN KEY (post_id) REFERENCES posts (id),
-            FOREIGN KEY (doctor_id) REFERENCES doctors (id)
-        )
-    ''')
-    conn.commit()
+def init_db():
+    conn = get_db_connection()
+    if not conn:
+        print("Can't initialize DB - no connection")
+        return
+    try:
+        cursor = conn.cursor()
+        cursor.execute('''
+            CREATE TABLE IF NOT EXISTS doctors (
+                id INT AUTO_INCREMENT PRIMARY KEY,
+                email VARCHAR(255) UNIQUE NOT NULL,
+                phone CHAR(10) NOT NULL, 
+                password VARCHAR(255) NOT NULL,
+                first_name VARCHAR(255),
+                last_name VARCHAR(255),
+                license_number VARCHAR(255),
+                dob VARCHAR(255),
+                years_of_experience INT,
+                clinic_address TEXT,
+                profile_image TEXT,
+                specialization VARCHAR(255)
+            )
+        ''')
+        cursor.execute('''
+            CREATE TABLE IF NOT EXISTS reports (
+                id INT AUTO_INCREMENT PRIMARY KEY,
+                doctor_id INT NOT NULL,
+                first_name VARCHAR(255) NOT NULL,
+                last_name VARCHAR(255) NOT NULL,
+                age INT NOT NULL,
+                gender VARCHAR(50) NOT NULL,
+                clinical_history TEXT NOT NULL,
+                medical_image TEXT,
+                organ VARCHAR(255) NOT NULL,
+                disease VARCHAR(255) NOT NULL,
+                features TEXT,
+                disease_image TEXT,
+                report TEXT NOT NULL,
+                report_pdf LONGBLOB,
+                FOREIGN KEY (doctor_id) REFERENCES doctors (id)
+            )
+        ''')
+        cursor.execute('''
+            CREATE TABLE IF NOT EXISTS posts (
+                id INT AUTO_INCREMENT PRIMARY KEY,
+                doctor_id INT NOT NULL,
+                title VARCHAR(255) NOT NULL,
+                content TEXT NOT NULL,
+                category VARCHAR(255) NOT NULL,
+                likes INT DEFAULT 0,
+                FOREIGN KEY (doctor_id) REFERENCES doctors (id)
+            )
+        ''')
+        cursor.execute('''
+            CREATE TABLE IF NOT EXISTS comments (
+                id INT AUTO_INCREMENT PRIMARY KEY,
+                post_id INT NOT NULL,
+                doctor_id INT NOT NULL,
+                content TEXT NOT NULL,
+                FOREIGN KEY (post_id) REFERENCES posts (id),
+                FOREIGN KEY (doctor_id) REFERENCES doctors (id)
+            )
+        ''')
+        conn.commit()
+    except Error as e:
+        print(f"Error initializing DB: {e}")
+    finally:
+        cursor.close()
+        conn.close()
+
+# Initialize the database
+init_db()
 
 
 otpdb={}
@@ -317,11 +395,19 @@ def signin():
     email = data.get('email')
     password = data.get('password')
 
-    with get_db_connection() as conn:
-        doctor = conn.execute('SELECT * FROM doctors WHERE email = ?', (email,)).fetchone()
+    conn = get_db_connection()
+    if not conn:
+        return jsonify({"message": "Database connection error"}), 500
+    try:
+        cursor = conn.cursor(dictionary=True)
+        cursor.execute('SELECT * FROM doctors WHERE email = %s', (email,))
+        doctor = cursor.fetchone()
         if doctor and check_password_hash(doctor['password'], password):
             return jsonify({"message": "Login successful", "id": doctor['id']}), 200
-    return jsonify({"message": "Invalid email or password"}), 401
+        return jsonify({"message": "Invalid email or password"}), 401
+    finally:
+        cursor.close()
+        conn.close()
 
 # Sign-up Endpoint
 @app.route('/signup', methods=['POST'])
@@ -338,41 +424,63 @@ def signup():
 
     try:
         hashed_password = generate_password_hash(password, method='pbkdf2:sha256')
-        with get_db_connection() as conn:
-            conn.execute('INSERT INTO doctors (first_name, last_name, email, phone, password) VALUES (?,?,?,?,?)', (fname, lname, email, phone, hashed_password))
+        conn = get_db_connection()
+        if not conn:
+            return jsonify({"message": "Database connection error"}), 500
+        try:
+            cursor = conn.cursor(dictionary=True)
+            cursor.execute('INSERT INTO doctors (first_name, last_name, email, phone, password) VALUES (%s,%s,%s,%s,%s)', 
+                         (fname, lname, email, phone, hashed_password))
             conn.commit()
-        doctor = conn.execute('SELECT * FROM doctors WHERE email = ?', (email,)).fetchone()
-        return jsonify({"message": "Signup successful!","id": doctor['id']}), 201
-    except sqlite3.IntegrityError:
+            cursor.execute('SELECT * FROM doctors WHERE email = %s', (email,))
+            doctor = cursor.fetchone()
+            return jsonify({"message": "Signup successful!","id": doctor['id']}), 201
+        finally:
+            cursor.close()
+            conn.close()
+    except mysql.connector.IntegrityError:
         return jsonify({"message": "Email already exists"}), 400
 
 @app.route('/dashboard/<int:doctor_id>', methods=['GET'])
 def get_dashboard(doctor_id):
-    with get_db_connection() as conn:
+    conn = get_db_connection()
+    if not conn:
+        return jsonify({"message": "Database connection error"}), 500
+    
+    cursor = None  # Initialize cursor to None
+    try:
+        cursor = conn.cursor(dictionary=True)
+        
         # Fetch doctor details
-        doctor = conn.execute('SELECT first_name, last_name FROM doctors WHERE id = ?', (doctor_id,)).fetchone()
+        cursor.execute('SELECT first_name, last_name FROM doctors WHERE id = %s', (doctor_id,))
+        doctor = cursor.fetchone()
         
         if not doctor:
             return jsonify({"message": "Doctor not found"}), 404
 
         # Fetch total number of patients
-        total_patients = conn.execute('SELECT COUNT(*) FROM reports WHERE doctor_id = ?', (doctor_id,)).fetchone()[0]
+        cursor.execute('SELECT COUNT(*) as count FROM reports WHERE doctor_id = %s', (doctor_id,))
+        total_patients = cursor.fetchone()['count']
 
         # Fetch critical patients
-        critical_patients = conn.execute(
-            "SELECT id, first_name, last_name, features FROM reports WHERE doctor_id = ?", 
+        cursor.execute(
+            "SELECT id, first_name, last_name, features FROM reports WHERE doctor_id = %s", 
             (doctor_id,)
-            ).fetchall()
+        )
+        critical_patients = cursor.fetchall()
 
-# Process the results
+        # Process the results for critical patients
         critical_patients_list = []
-
         for patient in critical_patients:
-            features = json.loads(patient["features"]) if patient["features"] else []  # Convert from string to list
+            # Safely parse JSON features
+            try:
+                features = json.loads(patient["features"]) if patient["features"] else []
+            except json.JSONDecodeError:
+                features = [] # Handle cases where features are not valid JSON
 
-    # Check if any feature has severity = "severe"
-            if any(feature[5] == "severe" for feature in features):
-                    critical_patients_list.append({
+            # Check if any feature has severity = "severe"
+            if any(isinstance(feature, list) and len(feature) > 5 and feature[5] == "severe" for feature in features):
+                critical_patients_list.append({
                     "id": patient["id"],
                     "name": f"{patient['first_name']} {patient['last_name']}"
                 })
@@ -383,17 +491,39 @@ def get_dashboard(doctor_id):
             "critical_patients": critical_patients_list
         }), 200
 
+    except Error as e:
+        # Log the specific database error for debugging
+        print(f"Database error: {e}")
+        return jsonify({"message": "An error occurred while fetching dashboard data."}), 500
+    except Exception as e:
+        # Log any other unexpected errors
+        print(f"An unexpected error occurred: {e}")
+        return jsonify({"message": "An internal server error occurred."}), 500
+        
+    finally:
+        # Ensure the cursor and connection are always closed
+        if cursor:
+            cursor.close()
+        if conn and conn.is_connected():
+            conn.close()
+
     
 # Fetch Doctor Profile
 @app.route('/doctor/<int:doctor_id>', methods=['GET'])
 def get_doctor_profile(doctor_id):
-    with get_db_connection() as conn:
-        doctor = conn.execute('SELECT * FROM doctors WHERE id = ?', (doctor_id,)).fetchone()
+    conn = get_db_connection()
+    if not conn:
+        return jsonify({"message": "Database connection error"}), 500
+    try:
+        cursor = conn.cursor(dictionary=True)
+        cursor.execute('SELECT * FROM doctors WHERE id = %s', (doctor_id,))
+        doctor = cursor.fetchone()
         if not doctor:
             return jsonify({"message": "Doctor not found"}), 404
-
-        doctor_data = dict(doctor)
-        return jsonify(doctor_data), 200
+        return jsonify(doctor), 200
+    finally:
+        cursor.close()
+        conn.close()
 
 
 # Update Doctor Profile
@@ -402,8 +532,13 @@ def update_doctor(doctor_id):
     data = request.form
     profile_image = request.files.get('profile_image')
     print("image received")
-    with get_db_connection() as conn:
-        doctor = conn.execute('SELECT * FROM doctors WHERE id = ?', (doctor_id,)).fetchone()
+    conn = get_db_connection()
+    if not conn:
+        return jsonify({"message": "Database connection error"}), 500
+    try:
+        cursor = conn.cursor(dictionary=True)
+        cursor.execute('SELECT * FROM doctors WHERE id = %s', (doctor_id,))
+        doctor = cursor.fetchone()
         if not doctor:
             return jsonify({"message": "Doctor not found"}), 404
 
@@ -411,22 +546,25 @@ def update_doctor(doctor_id):
         image_url = doctor['profile_image']
         if profile_image:
             filename = secure_filename(f"doctor_{doctor_id}_profile.jpg")
-            image_path = os.path.join(app.config['USER_FOLDER'], filename)
-            profile_image.save(image_path)
-            image_url = url_for('serve_user_image', filename=filename, _external=True)
+            image_url = upload_file_to_s3(profile_image, S3_USER_FOLDER, filename)
+            if not image_url:
+                return jsonify({"message": "Failed to upload image"}), 500
 
-        conn.execute('''
+        cursor.execute('''
             UPDATE doctors
-            SET first_name = ?, last_name = ?, license_number = ?, dob=?,
-                years_of_experience = ?, clinic_address = ?, email = ?, specialization = ?, profile_image = ?
-            WHERE id = ?
+            SET first_name = %s, last_name = %s, license_number = %s, dob=%s,
+                years_of_experience = %s, clinic_address = %s, email = %s, specialization = %s, profile_image = %s
+            WHERE id = %s
         ''', (
             data['firstName'], data['lastName'], data['licenseNumber'], data['dob'],
             data['yearsOfExperience'], data['clinicAddress'], data['email'], data['specialization'],
             image_url, doctor_id
         ))
         conn.commit()
-    
+    finally:
+        cursor.close()
+        conn.close()
+
     return jsonify({"message": "Profile updated successfully"}), 200
 
 
@@ -453,24 +591,46 @@ def generate_report():
     if not all([doctor_id, first_name, last_name, age, clinical_history]):
         return jsonify({"message": "All fields are required"}), 400
 
-    if medical_image.filename.lower().endswith(".dcm"):
-        filename = secure_filename(f"{first_name}_{last_name}_{medical_image.filename}")
-        image_path = os.path.join(app.config['UPLOAD_FOLDER'], filename)
-        medical_image.save(image_path)
+    # Create a temporary directory for processing
+    import tempfile
+    import shutil
+    temp_dir = tempfile.mkdtemp()
+    image_path = None
+    
+    try:
+        if medical_image.filename.lower().endswith(".dcm"):
+            filename = secure_filename(f"{first_name}_{last_name}_{medical_image.filename}")
+            temp_path = os.path.join(temp_dir, filename)
+            medical_image.save(temp_path)
+            
+            # Convert DICOM to JPG
+            jpg_path = dicom_to_jpg(temp_path, temp_dir, dicom_value)
+            filename = secure_filename(f"{first_name}_{last_name}_{medical_image.filename[0]}.jpg")
+            image_path = jpg_path
+            
+            # Upload JPG to S3
+            with open(jpg_path, 'rb') as jpg_file:
+                image_url = upload_file_to_s3(jpg_file, S3_UPLOAD_FOLDER, filename)
+                if not image_url:
+                    return jsonify({"message": "Failed to upload image"}), 500
 
-        # dicom_folder = "dicom_images"
-        os.makedirs("uploads", exist_ok=True)
-        
-        image_path = dicom_to_jpg(image_path, "uploads", dicom_value)
-        filename = secure_filename(f"{first_name}_{last_name}_{medical_image.filename[0]}.jpg")
-        print(f"Best-selected frame converted to JPG: {image_path}")
-        image_url = url_for('serve_uploaded_file', filename=filename, _external=True)
+        if medical_image and not medical_image.filename.lower().endswith(".dcm"):
+            filename = secure_filename(f"{first_name}_{last_name}_{medical_image.filename}")
+            # Save temporarily for processing
+            temp_path = os.path.join(temp_dir, filename)
+            medical_image.save(temp_path)
+            image_path = temp_path
+            
+            # Upload to S3
+            medical_image.seek(0)
+            image_url = upload_file_to_s3(medical_image, S3_UPLOAD_FOLDER, filename)
+            if not image_url:
+                return jsonify({"message": "Failed to upload image"}), 500
+    except Exception as e:
+    # It's a good practice to log the actual error for debugging
+        print(f"An error occurred: {e}") 
+        return jsonify({"message": "An internal server error occurred during file processing."}), 500
 
-    if medical_image and not medical_image.filename.lower().endswith(".dcm"):
-        filename = secure_filename(f"{first_name}_{last_name}_{medical_image.filename}")
-        image_path = os.path.join(app.config['UPLOAD_FOLDER'], filename)
-        medical_image.save(image_path)
-        image_url = url_for('serve_uploaded_file', filename=filename, _external=True)
     try:
         # Use the uploaded image path for processing
         print("Identifying organ...")
@@ -527,47 +687,63 @@ def generate_report():
     except Exception as e:
         return jsonify({'error': str(e)}), 500
 
-    with get_db_connection() as conn:
+    conn = get_db_connection()
+    if not conn:
+        return jsonify({"message": "Database connection error"}), 500
+    try:
+        cursor = conn.cursor()
         if organ=="Liver" or organ=="Brain" or disease=="stone":
             features = json.dumps(features)
             if isinstance(disease, list):
                 disease = json.dumps(disease)
-            conn.execute('''
-            INSERT INTO reports (doctor_id, first_name, last_name, age, gender, clinical_history, medical_image, organ, disease, features, disease_image, report)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?,?, ?, ?, ?)
-        ''', (doctor_id, first_name, last_name, age, gender, clinical_history, image_url, organ, disease, features, output_url, response))
+            cursor.execute(
+                '''INSERT INTO reports (doctor_id, first_name, last_name, age, gender, clinical_history, medical_image, organ, disease, features, disease_image, report)
+                VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)''',
+                (doctor_id, first_name, last_name, age, gender, clinical_history, image_url, organ, disease, features, output_url, response)
+            )
             conn.commit()
         else:
-            conn.execute('''
-                INSERT INTO reports (doctor_id, first_name, last_name, age, gender, clinical_history, medical_image, organ, disease, disease_image, report)
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?,?, ?, ?)
-            ''', (doctor_id, first_name, last_name, age, gender, clinical_history, image_url, organ, disease, output_url, response))
+            cursor.execute(
+                '''INSERT INTO reports (doctor_id, first_name, last_name, age, gender, clinical_history, medical_image, organ, disease, disease_image, report)
+                VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)''',
+                (doctor_id, first_name, last_name, age, gender, clinical_history, image_url, organ, disease, output_url, response)
+            )
             conn.commit()
 
-    report_id = conn.execute('SELECT last_insert_rowid()').fetchone()[0]
-    # print(report_id)
-    return jsonify({"message": "Report created successfully", "report_id": report_id}), 201
+        report_id = cursor.lastrowid
+        # print(report_id)
+        return jsonify({"message": "Report created successfully", "report_id": report_id}), 201
+    finally:
+        cursor.close()
+        conn.close()
 
 
 # Fetch Reports for a Doctor
 @app.route('/reports/<int:doctor_id>', methods=['GET'])
 def get_reports(doctor_id):
-    with get_db_connection() as conn:
-        reports = conn.execute('SELECT id, first_name, last_name, age, clinical_history, disease, features FROM reports WHERE doctor_id = ?', (doctor_id,)).fetchall()
+    conn = get_db_connection()
+    if not conn:
+        return jsonify({"message": "Database connection error"}), 500
+    try:
+        cursor = conn.cursor(dictionary=True)
+        cursor.execute('SELECT id, first_name, last_name, age, clinical_history, disease, features FROM reports WHERE doctor_id = %s', (doctor_id,))
+        reports = cursor.fetchall()
+
         def extract_area(area):
-                if isinstance(area, (int, float)):  # If already numeric, return as is
-                    return float(area)
-                if isinstance(area, str):  # If string, extract numbers
-                    match = re.search(r"([\d\.]+)", area)
-                    return float(match.group(1)) if match else 0
-                return 0  # Default fallback
+            if isinstance(area, (int, float)):  # If already numeric, return as is
+                return float(area)
+            if isinstance(area, str):  # If string, extract numbers
+                match = re.search(r"([\d\.]+)", area)
+                return float(match.group(1)) if match else 0
+            return 0  # Default fallback
+
         updated_reports = []
         for report in reports:
             report_dict = dict(report)
-            
+
             # Convert features from text to a list
             features = json.loads(report_dict["features"]) if report_dict["features"] else []
-            
+
             # Determine severity from the feature with the highest area
             if features:
                 max_area_feature = max(features, key=lambda x: extract_area(x[1])) # x[0] is area
@@ -578,16 +754,25 @@ def get_reports(doctor_id):
             updated_reports.append(report_dict)
 
         return jsonify(updated_reports), 200
+    finally:
+        cursor.close()
+        conn.close()
 
 
 # Fetch a Single Report by ID
 @app.route('/view-report/<int:report_id>', methods=['GET'])
 def get_report(report_id):
-    with get_db_connection() as conn:
-        report = conn.execute('SELECT * FROM reports WHERE id = ?', (report_id,)).fetchone()
-        doctor = conn.execute('SELECT * FROM doctors WHERE id = ?', (report["doctor_id"],)).fetchone()
+    conn = get_db_connection()
+    if not conn:
+        return jsonify({"message": "Database connection error"}), 500
+    try:
+        cursor = conn.cursor(dictionary=True)
+        cursor.execute('SELECT * FROM reports WHERE id = %s', (report_id,))
+        report = cursor.fetchone()
         if not report:
             return jsonify({"message": "Report not found"}), 404
+        cursor.execute('SELECT * FROM doctors WHERE id = %s', (report["doctor_id"],))
+        doctor = cursor.fetchone()
         data_dict = json.loads(report["report"].strip("```json\n").strip("```"))
         print(data_dict)
         # Constructing the response JSON
@@ -639,43 +824,50 @@ def get_report(report_id):
         }
         
         return jsonify(report_data), 200
+    finally:
+        cursor.close()
+        conn.close()
 
 
 @app.route("/upload-report", methods=["POST"])
 def upload_report():
+    # Check if the request contains a file and record ID
+    if "report_pdf" not in request.files or "record_id" not in request.form:
+        return jsonify({"error": "Missing file or record ID"}), 400
+
+    file = request.files["report_pdf"]
+    record_id = request.form["record_id"]
+    print("Data fetched successfully.")
+
+    if file.filename == "":
+        return jsonify({"error": "No selected file"}), 400
+
+    # Secure the file name and store in the uploads folder
+    filename = secure_filename(f"Medical_Report_{record_id}.pdf")
+    file_path = os.path.join(app.config['UPLOAD_FOLDER'], filename)
+
+    # Read and save the file
+    pdf_data = file.read()
+    file.seek(0)
+    file.save(file_path)
+
+    # Save the binary PDF data in the database
+    conn = get_db_connection()
+    if not conn:
+        return jsonify({"message": "Database connection error"}), 500
     try:
-        # Check if the request contains a file and record ID
-        if "report_pdf" not in request.files or "record_id" not in request.form:
-            return jsonify({"error": "Missing file or record ID"}), 400
-
-        file = request.files["report_pdf"]
-        record_id = request.form["record_id"]
-        print("Data fetched successfully.")
-
-        if file.filename == "":
-            return jsonify({"error": "No selected file"}), 400
-
-        # Secure the file name and store in the uploads folder
-        filename = secure_filename(f"Medical_Report_{record_id}.pdf")
-        file_path = os.path.join(UPLOAD_FOLDER, filename)
-
-        # ✅ FIX: Read the file before saving it
-        pdf_data = file.read()  # Read binary data
-        file.seek(0)  # Reset the file pointer so it can be saved properly
-        file.save(file_path)  # Now save the file
-
-        # Save the binary PDF data in the database
-        with get_db_connection() as conn:
-            conn.execute(
-                "UPDATE reports SET report_pdf = ? WHERE id = ?",
-                (pdf_data, record_id),
-            )
-            conn.commit()
-
+        cursor = conn.cursor()
+        cursor.execute("UPDATE reports SET report_pdf = %s WHERE id = %s", (pdf_data, record_id))
+        conn.commit()
         return jsonify({"message": "Report uploaded successfully!"}), 200
-
     except Exception as e:
         return jsonify({"error": str(e)}), 500
+    finally:
+        try:
+            cursor.close()
+        except:
+            pass
+        conn.close()
 
 @app.route("/send-email", methods=["POST"])
 def send_email():
@@ -692,12 +884,20 @@ def send_email():
         msg = Message(subject, recipients=[recipient], body=body)
 
         if include_attachment and record_id:
-            with get_db_connection() as conn:
-                pdf_data = conn.execute("SELECT report_pdf FROM reports WHERE id = ?", (record_id,)).fetchone()
+            conn = get_db_connection()
+            if not conn:
+                return jsonify({"message": "Database connection error"}), 500
+            try:
+                cursor = conn.cursor(dictionary=True)
+                cursor.execute("SELECT report_pdf FROM reports WHERE id = %s", (record_id,))
+                pdf_data = cursor.fetchone()
+            finally:
+                cursor.close()
+                conn.close()
             
             print("Fetched pdf_data:", pdf_data)  # Debugging
 
-            if pdf_data:
+            if pdf_data and pdf_data.get("report_pdf"):
                 pdf_blob = pdf_data["report_pdf"]  # Extract the BLOB data using column name
                 print("Extracted PDF data length:", len(pdf_blob))  # Debugging
 
@@ -716,11 +916,17 @@ def send_email():
 # Forum: Fetch All Posts with Comments
 @app.route('/posts', methods=['GET'])
 def get_posts():
-    with get_db_connection() as conn:
-        posts = conn.execute('SELECT * FROM posts').fetchall()
+    conn = get_db_connection()
+    if not conn:
+        return jsonify({"message": "Database connection error"}), 500
+    try:
+        cursor = conn.cursor(dictionary=True)
+        cursor.execute('SELECT * FROM posts')
+        posts = cursor.fetchall()
         posts_data = []
         for post in posts:
-            comments = conn.execute('SELECT * FROM comments WHERE post_id = ?', (post['id'],)).fetchall()
+            cursor.execute('SELECT * FROM comments WHERE post_id = %s', (post['id'],))
+            comments = cursor.fetchall()
             posts_data.append({
                 "id": post["id"],
                 "doctor_id": post["doctor_id"],
@@ -731,6 +937,9 @@ def get_posts():
                 "comments": [dict(comment) for comment in comments]
             })
         return jsonify(posts_data), 200
+    finally:
+        cursor.close()
+        conn.close()
 
 # Forum: Add a New Post
 @app.route('/posts', methods=['POST'])
@@ -744,11 +953,18 @@ def add_post():
     if not all([doctor_id, title, content, category]):
         return jsonify({"message": "All fields are required"}), 400
 
-    with get_db_connection() as conn:
-        conn.execute('INSERT INTO posts (doctor_id, title, content, category) VALUES (?, ?, ?, ?)',
+    conn = get_db_connection()
+    if not conn:
+        return jsonify({"message": "Database connection error"}), 500
+    try:
+        cursor = conn.cursor()
+        cursor.execute('INSERT INTO posts (doctor_id, title, content, category) VALUES (%s, %s, %s, %s)',
                      (doctor_id, title, content, category))
         conn.commit()
-    return jsonify({"message": "Post created successfully"}), 201
+        return jsonify({"message": "Post created successfully"}), 201
+    finally:
+        cursor.close()
+        conn.close()
 
 # Forum: Add a Comment to a Post
 @app.route('/posts/<int:post_id>/comments', methods=['POST'])
@@ -760,24 +976,40 @@ def add_comment(post_id):
     if not all([doctor_id, content]):
         return jsonify({"message": "All fields are required"}), 400
 
-    with get_db_connection() as conn:
-        conn.execute('INSERT INTO comments (post_id, doctor_id, content) VALUES (?, ?, ?)',
+    conn = get_db_connection()
+    if not conn:
+        return jsonify({"message": "Database connection error"}), 500
+    try:
+        cursor = conn.cursor()
+        cursor.execute('INSERT INTO comments (post_id, doctor_id, content) VALUES (%s, %s, %s)',
                      (post_id, doctor_id, content))
         conn.commit()
-    return jsonify({"message": "Comment added successfully"}), 201
+        return jsonify({"message": "Comment added successfully"}), 201
+    finally:
+        cursor.close()
+        conn.close()
 
 @app.route('/uploads/<filename>')
 def serve_uploaded_file(filename):
-    return send_from_directory(app.config['UPLOAD_FOLDER'], filename)
+    url = get_s3_presigned_url(S3_UPLOAD_FOLDER, filename)
+    if url:
+        return redirect(url)
+    return jsonify({"message": "File not found"}), 404
 
 # Serve output images
 @app.route('/output/<filename>')
 def serve_output_file(filename):
-    return send_from_directory(app.config['OUTPUT_FOLDER'], filename)
+    url = get_s3_presigned_url(S3_OUTPUT_FOLDER, filename)
+    if url:
+        return redirect(url)
+    return jsonify({"message": "File not found"}), 404
 
 @app.route('/user/<filename>')
 def serve_user_image(filename):
-    return send_from_directory(app.config['USER_FOLDER'], filename)
+    url = get_s3_presigned_url(S3_USER_FOLDER, filename)
+    if url:
+        return redirect(url)
+    return jsonify({"message": "File not found"}), 404
 
 
 if __name__ == '__main__':
