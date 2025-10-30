@@ -340,11 +340,10 @@ def dicom_to_jpg(dicom_path, output_folder, method):
     if len(best_frame.shape) == 2:
         best_frame = cv2.cvtColor(best_frame, cv2.COLOR_GRAY2RGB)
     
-    # Save as JPG
-    output_filename=os.path.join(app.config['UPLOAD_FOLDER'], os.path.splitext(os.path.basename(dicom_path))[0] + ".jpg")
-    # output_filename = os.path.join(output_folder, )
+    # Save as JPG into the provided output_folder (use the temp dir when provided)
+    output_filename = os.path.join(output_folder, os.path.splitext(os.path.basename(dicom_path))[0] + ".jpg")
     cv2.imwrite(output_filename, best_frame)
-    
+
     return output_filename
 
 
@@ -632,58 +631,51 @@ def generate_report():
         return jsonify({"message": "An internal server error occurred during file processing."}), 500
 
     try:
-        # Use the uploaded image path for processing
-        print("Identifying organ...")
-        organ = predict.predict_organ(image_path)
-        if organ=="brain-dcm":
-            organ="Brain"
-          
-            dcm=True
-        print("organ: ",organ)
-        print("Predicting disease and extracting features...")
-        if organ == "Liver-Tumor" or organ=="Liver-Disease" or organ=="Brain":
-            # print(organ)
-            disease, features = predict.predict_disease(organ, image_path, filename)
-            if dcm==True:
-                disease="healthy"
-                features=[]
-            print(disease, features)
+        # Use S3-based prediction flow: call predict.predict_from_s3 which downloads the upload,
+        # runs local inference, uploads the output image to S3, and returns the result.
+        print("Calling predict.predict_from_s3 on S3 upload key...")
+        upload_key = f"{S3_UPLOAD_FOLDER}{filename}"
+        predict_result = predict.predict_from_s3(upload_key, filename, S3_BUCKET, s3_client=s3_client, uploads_prefix=S3_UPLOAD_FOLDER, output_prefix=S3_OUTPUT_FOLDER)
+        print("Predict result:", predict_result)
+
+        if predict_result.get('error'):
+            return jsonify({"message": "Prediction failed", "detail": predict_result.get('error')}), 500
+
+        disease = predict_result.get('disease')
+        features = predict_result.get('features', [])
+        organ = predict_result.get('organ') or None
+        output_key = predict_result.get('output_key')
+
+        # Handle DICOM special-case mapping (keep previous behavior)
+        if organ == "brain-dcm":
+            organ = "Brain"
+            dcm = True
+
+        # If DICOM and we want to force healthy (previous behavior), override
+        if dcm:
+            disease = "healthy"
+            features = []
+
+        # Prepare the report
+        if organ == "Liver-Tumor" or organ == "Liver-Disease" or organ == "Brain":
             if organ != "Brain":
-                organ="Liver"
-            print("Preparing the report")
-            # print(organ)
-            # print(age)
-            # print(clinical_history)
-            print(disease)
-            print(features)
-            print("Initiating report preparation")
+                organ = "Liver"
             response = report2.report(embedding_model, organ, age, clinical_history, disease, features)
         else:
-            disease = predict.predict_disease(organ, image_path, filename)
-            print(disease)
-            if disease=="stone":
-                disease, features=predict.kidney_stone_model(image_path, filename)
-                print(disease)
-                print(features)
-                print("Initiating report preparation")
-                response = report2.report(embedding_model, organ, age, clinical_history, disease, features)
+            if isinstance(disease, list) or disease == "stone":
+                # kidney stone or list-handling
+                if disease == "stone":
+                    response = report2.report(embedding_model, organ, age, clinical_history, disease, features)
+                else:
+                    response = report2.report(embedding_model, organ, age, clinical_history, disease)
             else:
-                # Ensure output folder exists
-                output_folder = 'output'
-                os.makedirs(output_folder, exist_ok=True)  # Create the output folder if it doesn't exist
-
-        # Define output path and save the file
-                output_path = os.path.join(output_folder, filename)
-                medical_image.save(output_path)  # Save the file to the 'output' folder
-
-            if organ=="Chest":
-                organ="Lungs"
-            # print(organ)
-            if disease !="stone":
-                print("Initiating report preparation")
                 response = report2.report(embedding_model, organ, age, clinical_history, disease)
-        output_path = os.path.join(app.config['OUTPUT_FOLDER'], filename)
-        output_url = url_for('serve_output_file', filename=filename, _external=True)
+
+        # Build the external URL that redirects to a presigned S3 URL (if output was produced)
+        output_url = None
+        if output_key:
+            output_filename = os.path.basename(output_key)
+            output_url = url_for('serve_output_file', filename=output_filename, _external=True)
     except Exception as e:
         return jsonify({'error': str(e)}), 500
 
@@ -844,12 +836,16 @@ def upload_report():
 
     # Secure the file name and store in the uploads folder
     filename = secure_filename(f"Medical_Report_{record_id}.pdf")
-    file_path = os.path.join(app.config['UPLOAD_FOLDER'], filename)
-
-    # Read and save the file
+    # Read the PDF data (we keep this for storing in DB) and upload to S3
     pdf_data = file.read()
     file.seek(0)
-    file.save(file_path)
+    try:
+        s3_uploaded = upload_file_to_s3(file, S3_UPLOAD_FOLDER, filename)
+        if not s3_uploaded:
+            return jsonify({"message": "Failed to upload PDF to S3"}), 500
+    except Exception as e:
+        print(f"Error uploading PDF to S3: {e}")
+        return jsonify({"error": "Failed to upload PDF to S3"}), 500
 
     # Save the binary PDF data in the database
     conn = get_db_connection()

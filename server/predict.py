@@ -8,10 +8,26 @@ import matplotlib.pyplot as plt
 from ultralytics import YOLO
 import pandas as pd
 from tensorflow import keras
+import tempfile
+import boto3
+from botocore.exceptions import ClientError
+# Define the base directory for models at the top of your file
+MODEL_DIR = os.path.join(os.path.dirname(__file__), 'models')
 
+# Output directory used by model functions; can be overridden by callers (e.g., when using temp dirs)
+OUTPUT_DIR = os.path.join(os.getcwd(), 'output')
+
+def _ensure_output_dir(path):
+    try:
+        os.makedirs(path, exist_ok=True)
+    except Exception:
+        pass
+
+_ensure_output_dir(OUTPUT_DIR)
 
 def predict_organ(image_path):
-    organ_model = load_model('organ_classifier.h5')
+    model_path=os.path.join(MODEL_DIR, "organ_classifier.h5")
+    organ_model = load_model(model_path)
     IMG_SIZE = (128,128)
     # print("identifying organ")
     CLASSES_ORGANS = ['Chest', 'Liver-Disease', 'Liver-Tumor', 'Brain', 'brain-dcm', 'Eye', 'Kidney']
@@ -24,7 +40,7 @@ def predict_organ(image_path):
     # print(predicted_class)
     return predicted_class
 
-def kidney_stone_model(image_path, filename, model_path="/content/runs/detect/kidney_stone.pt/weights/best.pt"):
+def kidney_stone_model(image_path, filename, model_path=os.path.join(MODEL_DIR, "kidney_stone.pt/weights/best.pt")):
  
     # Load the trained model
     model = YOLO(model_path)
@@ -99,8 +115,9 @@ def kidney_stone_model(image_path, filename, model_path="/content/runs/detect/ki
         text = f"{kidney_label}, {severity} ({confidence:.2f})"
         cv2.putText(img, text, (x1, y1 - 10), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 255, 0), 2)
 
-    # Save the image with bounding boxes as 'output.jpg'
-    output_path = os.path.join('output', filename)
+    # Save the image with bounding boxes into OUTPUT_DIR
+    _ensure_output_dir(OUTPUT_DIR)
+    output_path = os.path.join(OUTPUT_DIR, filename)
     cv2.imwrite(output_path, img)
 
     # Visualize predictions
@@ -131,7 +148,8 @@ def kidney_stone_model(image_path, filename, model_path="/content/runs/detect/ki
     return "stone", features
 
 def kidney_model(image_path):
-    kidney = load_model('kidney_disease_classification_model.h5')
+    model_path=os.path.join(MODEL_DIR, "kidney_disease_classification_model.h5")
+    kidney = load_model(model_path)
     IMG_SIZE = (128,128)
     CLASSES = ['cyst', 'stone', 'tumor', 'healthy']
     img = load_img(image_path, target_size=IMG_SIZE)
@@ -153,7 +171,8 @@ def kidney_model(image_path):
     return predicted_class
 
 def eye_model(image_path):
-    eye = load_model('eye_disease_classification_model.h5')
+    model_path=os.path.join(MODEL_DIR, "eye_disease_classification_model.h5")
+    eye = load_model(model_path)
     IMG_SIZE = (128,128)
     CLASSES = ["cataract",  "diabetic_retinopathy", "glaucoma", "normal"]
     img = load_img(image_path, target_size=IMG_SIZE)
@@ -175,7 +194,8 @@ def eye_model(image_path):
     return predicted_class
 
 def chest_model(image_path):
-    chest = load_model('chest_disease_classification_model.h5')
+    model_path=os.path.join(MODEL_DIR, "chest_disease_classification_model.h5")
+    chest = load_model(model_path)
     IMG_SIZE = (128,128)
     CLASSES = ['healthy', 'covid-19', 'pneumonia', 'tuberculosis']
     img = load_img(image_path, target_size=IMG_SIZE)
@@ -262,7 +282,7 @@ def carve_tumor_edges(image, x1, y1, x2, y2):
 
     return tumor_area_mm, tumor_perimeter_mm, shape
 
-def brain_model(image_path, filename, model_path="/content/drive/MyDrive/BioBERT/Brain_Tumor_Classification_best.pt"):
+def brain_model(image_path, filename, model_path=os.path.join(MODEL_DIR, "Brain_Tumor_Classification_best.pt")):
     # Load the trained YOLOv8 model
     model = YOLO(model_path)
 
@@ -343,8 +363,9 @@ def brain_model(image_path, filename, model_path="/content/drive/MyDrive/BioBERT
         label_text = f"{tumor_name} ({confidence:.2f})"
         cv2.putText(img, label_text, (x1, y1 - 10), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 255, 0), 2)
     features.append(count)
-    # Save and display the output image
-    output_path = os.path.join('output', filename)
+    # Save and display the output image into OUTPUT_DIR
+    _ensure_output_dir(OUTPUT_DIR)
+    output_path = os.path.join(OUTPUT_DIR, filename)
     cv2.imwrite(output_path, img)
     img_rgb = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
     plt.imshow(img_rgb)
@@ -357,7 +378,7 @@ def brain_model(image_path, filename, model_path="/content/drive/MyDrive/BioBERT
         diseases=diseases[0]
     return diseases,features
 
-def liver_tumor_model(image_path, filename, model_path="/content/drive/MyDrive/PICT Techfiesta/liver_tumor_segmentation_model.pt"):
+def liver_tumor_model(image_path, filename, model_path=os.path.join(MODEL_DIR, "liver_tumor_segmentation_model.pt")):
     """
     Enhances the YOLO model predictions by calculating tumor size, location, severity, and count.
     """
@@ -431,8 +452,9 @@ def liver_tumor_model(image_path, filename, model_path="/content/drive/MyDrive/P
         text = f"Class {label}, {severity} ({confidence:.2f})"
         cv2.putText(img, text, (x1, y1 - 10), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 0, 255), 2)
 
-    # Save the image with bounding boxes as 'output.jpg'
-    output_path = os.path.join('output', filename)
+    # Save the image with bounding boxes into OUTPUT_DIR
+    _ensure_output_dir(OUTPUT_DIR)
+    output_path = os.path.join(OUTPUT_DIR, filename)
     cv2.imwrite(output_path, img)
 
     # Visualize predictions
@@ -456,7 +478,7 @@ def liver_tumor_model(image_path, filename, model_path="/content/drive/MyDrive/P
     features.append(count)
     return "Liver-Tumor", features
 
-def liver_model(image_path, filename, model_path="/content/drive/MyDrive/PICT Techfiesta/liver_disease_detection.pt"):
+def liver_model(image_path, filename, model_path=os.path.join(MODEL_DIR, "liver_disease_detection.pt")):
     """
     Enhances the YOLO model predictions by calculating tumor size, location, severity, and count.
     """
@@ -534,8 +556,9 @@ def liver_model(image_path, filename, model_path="/content/drive/MyDrive/PICT Te
         text = f"Class {label}, {severity} ({confidence:.2f})"
         cv2.putText(img, text, (x1, y1 - 10), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 0, 255), 2)
 
-    # Save the image with bounding boxes as 'output1.jpg'
-    output_path = os.path.join('output', filename)
+    # Save the image with bounding boxes into OUTPUT_DIR
+    _ensure_output_dir(OUTPUT_DIR)
+    output_path = os.path.join(OUTPUT_DIR, filename)
     cv2.imwrite(output_path, img)
   
 
@@ -577,19 +600,19 @@ def predict_disease(organ, image_path, filename):
     if organ == 'Chest':
         disease=chest_model(image_path)
     elif organ == 'Liver-Disease':
-        disease, features=liver_model(image_path, filename, "liver_disease_detection.pt")
+        disease, features=liver_model(image_path, filename)
         # print(disease)
         # print(features)
         return disease, features
     elif organ == 'Liver-Tumor':
-        disease, features=liver_tumor_model(image_path, filename, "liver_tumor_segmentation_model.pt")
+        disease, features=liver_tumor_model(image_path, filename)
         # print(disease)
         # print(features)
         # print("Here")
         return disease, features
     elif organ == 'Brain' or organ=='brain-dcm':
         # print("starting...")
-        disease, features=brain_model(image_path, filename,"Brain_Tumor_Classification_best.pt")
+        disease, features=brain_model(image_path, filename)
         # print(disease)
         # print(features)
         return disease, features
@@ -598,4 +621,88 @@ def predict_disease(organ, image_path, filename):
     elif organ == 'Kidney':
         disease=kidney_model(image_path)
     return disease
+
+
+def _download_from_s3(s3_client, bucket, key, dest_path):
+    try:
+        s3_client.download_file(bucket, key, dest_path)
+        return True
+    except ClientError as e:
+        print(f"S3 download error: {e}")
+        return False
+
+
+def _upload_to_s3(s3_client, bucket, key, file_path):
+    try:
+        s3_client.upload_file(file_path, bucket, key)
+        return True
+    except ClientError as e:
+        print(f"S3 upload error: {e}")
+        return False
+
+
+def predict_from_s3(upload_key, filename, bucket, s3_client=None, uploads_prefix='uploads/', output_prefix='output/'):
+    """
+    Download image from S3 (upload_key), run prediction locally, upload output image to S3 output_prefix/filename.
+
+    Returns dict: { 'disease': ..., 'features': ..., 'output_key': '<output_prefix><filename>' }
+    """
+    # Prepare S3 client if not provided
+    if s3_client is None:
+        s3_client = boto3.client('s3',
+                                 aws_access_key_id=os.getenv('AWS_ACCESS_KEY_ID'),
+                                 aws_secret_access_key=os.getenv('AWS_SECRET_ACCESS_KEY'),
+                                 region_name=os.getenv('AWS_REGION', None))
+
+    temp_dir = tempfile.mkdtemp()
+    try:
+        local_input_path = os.path.join(temp_dir, filename)
+        # Download from S3
+        ok = _download_from_s3(s3_client, bucket, upload_key, local_input_path)
+        if not ok:
+            return {'error': 'failed_to_download_input', 'organ': None}
+
+        # Set OUTPUT_DIR to temp_dir so model functions write output there
+        global OUTPUT_DIR
+        OUTPUT_DIR = temp_dir
+
+        # Identify organ and predict
+        organ = predict_organ(local_input_path)
+
+        # Ensure filename is safe
+        out_filename = filename
+
+        result = predict_disease(organ, local_input_path, out_filename)
+
+        # Normalize result to disease, features
+        if isinstance(result, tuple):
+            disease, features = result
+        else:
+            disease = result
+            features = []
+
+        # The model functions write output to OUTPUT_DIR/out_filename
+        local_output_path = os.path.join(OUTPUT_DIR, out_filename)
+        if not os.path.exists(local_output_path):
+            # If no output image was produced, still return info without output
+            return {'disease': disease, 'features': features, 'output_key': None, 'organ': organ}
+
+        # Upload output file to S3 under output_prefix
+        output_key = f"{output_prefix}{out_filename}"
+        ok = _upload_to_s3(s3_client, bucket, output_key, local_output_path)
+        if not ok:
+            return {'error': 'failed_to_upload_output', 'organ': organ}
+
+        return {'disease': disease, 'features': features, 'output_key': output_key, 'organ': organ}
+    finally:
+        # Cleanup local tempdir
+        try:
+            for f in os.listdir(temp_dir):
+                try:
+                    os.remove(os.path.join(temp_dir, f))
+                except Exception:
+                    pass
+            os.rmdir(temp_dir)
+        except Exception:
+            pass
    
