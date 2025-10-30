@@ -1,0 +1,6 @@
+numpy
+ultralytics
+pandas
+tensorflow
+opencv-python-headless
+boto3

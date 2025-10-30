@@ -40,7 +40,7 @@ def predict_organ(image_path):
     # print(predicted_class)
     return predicted_class
 
-def kidney_stone_model(image_path, filename, model_path=os.path.join(MODEL_DIR, "kidney_stone.pt/weights/best.pt")):
+def kidney_stone_model(image_path, full_output_path, model_path=os.path.join(MODEL_DIR, "kidney_stone.pt/weights/best.pt")):
  
     # Load the trained model
     model = YOLO(model_path)
@@ -115,9 +115,12 @@ def kidney_stone_model(image_path, filename, model_path=os.path.join(MODEL_DIR, 
         text = f"{kidney_label}, {severity} ({confidence:.2f})"
         cv2.putText(img, text, (x1, y1 - 10), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 255, 0), 2)
 
-    # Save the image with bounding boxes into OUTPUT_DIR
-    _ensure_output_dir(OUTPUT_DIR)
-    output_path = os.path.join(OUTPUT_DIR, filename)
+    # Save the image with bounding boxes to the provided full output path
+    try:
+        os.makedirs(os.path.dirname(full_output_path), exist_ok=True)
+    except Exception:
+        pass
+    output_path = full_output_path
     cv2.imwrite(output_path, img)
 
     # Visualize predictions
@@ -282,7 +285,7 @@ def carve_tumor_edges(image, x1, y1, x2, y2):
 
     return tumor_area_mm, tumor_perimeter_mm, shape
 
-def brain_model(image_path, filename, model_path=os.path.join(MODEL_DIR, "Brain_Tumor_Classification_best.pt")):
+def brain_model(image_path, full_output_path, model_path=os.path.join(MODEL_DIR, "Brain_Tumor_Classification_best.pt")):
     # Load the trained YOLOv8 model
     model = YOLO(model_path)
 
@@ -363,9 +366,12 @@ def brain_model(image_path, filename, model_path=os.path.join(MODEL_DIR, "Brain_
         label_text = f"{tumor_name} ({confidence:.2f})"
         cv2.putText(img, label_text, (x1, y1 - 10), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 255, 0), 2)
     features.append(count)
-    # Save and display the output image into OUTPUT_DIR
-    _ensure_output_dir(OUTPUT_DIR)
-    output_path = os.path.join(OUTPUT_DIR, filename)
+    # Save and display the output image to the provided full output path
+    try:
+        os.makedirs(os.path.dirname(full_output_path), exist_ok=True)
+    except Exception:
+        pass
+    output_path = full_output_path
     cv2.imwrite(output_path, img)
     img_rgb = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
     plt.imshow(img_rgb)
@@ -378,7 +384,7 @@ def brain_model(image_path, filename, model_path=os.path.join(MODEL_DIR, "Brain_
         diseases=diseases[0]
     return diseases,features
 
-def liver_tumor_model(image_path, filename, model_path=os.path.join(MODEL_DIR, "liver_tumor_segmentation_model.pt")):
+def liver_tumor_model(image_path, full_output_path, model_path=os.path.join(MODEL_DIR, "liver_tumor_segmentation_model.pt")):
     """
     Enhances the YOLO model predictions by calculating tumor size, location, severity, and count.
     """
@@ -452,9 +458,12 @@ def liver_tumor_model(image_path, filename, model_path=os.path.join(MODEL_DIR, "
         text = f"Class {label}, {severity} ({confidence:.2f})"
         cv2.putText(img, text, (x1, y1 - 10), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 0, 255), 2)
 
-    # Save the image with bounding boxes into OUTPUT_DIR
-    _ensure_output_dir(OUTPUT_DIR)
-    output_path = os.path.join(OUTPUT_DIR, filename)
+    # Save the image with bounding boxes into the provided full output path
+    try:
+        os.makedirs(os.path.dirname(full_output_path), exist_ok=True)
+    except Exception:
+        pass
+    output_path = full_output_path
     cv2.imwrite(output_path, img)
 
     # Visualize predictions
@@ -478,7 +487,7 @@ def liver_tumor_model(image_path, filename, model_path=os.path.join(MODEL_DIR, "
     features.append(count)
     return "Liver-Tumor", features
 
-def liver_model(image_path, filename, model_path=os.path.join(MODEL_DIR, "liver_disease_detection.pt")):
+def liver_model(image_path, full_output_path, model_path=os.path.join(MODEL_DIR, "liver_disease_detection.pt")):
     """
     Enhances the YOLO model predictions by calculating tumor size, location, severity, and count.
     """
@@ -556,9 +565,12 @@ def liver_model(image_path, filename, model_path=os.path.join(MODEL_DIR, "liver_
         text = f"Class {label}, {severity} ({confidence:.2f})"
         cv2.putText(img, text, (x1, y1 - 10), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 0, 255), 2)
 
-    # Save the image with bounding boxes into OUTPUT_DIR
-    _ensure_output_dir(OUTPUT_DIR)
-    output_path = os.path.join(OUTPUT_DIR, filename)
+    # Save the image with bounding boxes into the provided full output path
+    try:
+        os.makedirs(os.path.dirname(full_output_path), exist_ok=True)
+    except Exception:
+        pass
+    output_path = full_output_path
     cv2.imwrite(output_path, img)
   
 
@@ -595,32 +607,35 @@ def liver_model(image_path, filename, model_path=os.path.join(MODEL_DIR, "liver_
         diseases=diseases[0]
     return diseases, features
 
-def predict_disease(organ, image_path, filename):
-    """Predict disease based on organ type and image."""
+def predict_disease(organ, image_path, full_output_path):
+    """Predict disease based on organ type and image.
+
+    This function always returns a tuple: (disease, features).
+    For model functions that produce output images, `full_output_path` is
+    passed down so they can write into Lambda's /tmp or a temp dir.
+    """
+    features = []
+    disease = None
+
     if organ == 'Chest':
-        disease=chest_model(image_path)
+        disease = chest_model(image_path)
     elif organ == 'Liver-Disease':
-        disease, features=liver_model(image_path, filename)
-        # print(disease)
-        # print(features)
-        return disease, features
+        disease, features = liver_model(image_path, full_output_path)
     elif organ == 'Liver-Tumor':
-        disease, features=liver_tumor_model(image_path, filename)
-        # print(disease)
-        # print(features)
-        # print("Here")
-        return disease, features
-    elif organ == 'Brain' or organ=='brain-dcm':
-        # print("starting...")
-        disease, features=brain_model(image_path, filename)
-        # print(disease)
-        # print(features)
-        return disease, features
+        disease, features = liver_tumor_model(image_path, full_output_path)
+    elif organ == 'Brain' or organ == 'brain-dcm':
+        disease, features = brain_model(image_path, full_output_path)
     elif organ == 'Eye':
-        disease=eye_model(image_path)
+        disease = eye_model(image_path)
     elif organ == 'Kidney':
-        disease=kidney_model(image_path)
-    return disease
+        disease = kidney_model(image_path)
+
+    # Ensure we always return a tuple (disease, features)
+    if features is None:
+        features = []
+    if disease is None:
+        disease = "Unknown"
+    return disease, features
 
 
 def _download_from_s3(s3_client, bucket, key, dest_path):
@@ -662,29 +677,19 @@ def predict_from_s3(upload_key, filename, bucket, s3_client=None, uploads_prefix
         if not ok:
             return {'error': 'failed_to_download_input', 'organ': None}
 
-        # Set OUTPUT_DIR to temp_dir so model functions write output there
-        global OUTPUT_DIR
-        OUTPUT_DIR = temp_dir
-
-        # Identify organ and predict
+        # Identify organ and prepare local output path inside temp_dir
         organ = predict_organ(local_input_path)
 
         # Ensure filename is safe
         out_filename = filename
 
-        result = predict_disease(organ, local_input_path, out_filename)
+        # Create a local output path under temp_dir and pass it to predict_disease
+        local_output_path = os.path.join(temp_dir, out_filename)
 
-        # Normalize result to disease, features
-        if isinstance(result, tuple):
-            disease, features = result
-        else:
-            disease = result
-            features = []
+        disease, features = predict_disease(organ, local_input_path, local_output_path)
 
-        # The model functions write output to OUTPUT_DIR/out_filename
-        local_output_path = os.path.join(OUTPUT_DIR, out_filename)
+        # If no output image was produced, still return info without output
         if not os.path.exists(local_output_path):
-            # If no output image was produced, still return info without output
             return {'disease': disease, 'features': features, 'output_key': None, 'organ': organ}
 
         # Upload output file to S3 under output_prefix
