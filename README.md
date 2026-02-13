@@ -1,4 +1,4 @@
-# 🏥 Medical Image Analysis & Report Generation (AI-Powered)
+# 🏥 Medical Image Analysis & Report Generation
 
 ## 📌 Overview
 This project is an AI-powered medical diagnostic system that integrates **Computer Vision (CV)** and **Natural Language Processing (NLP)** to analyze medical images (X-rays, MRIs, CT scans) and generate **diagnostic reports**.  
